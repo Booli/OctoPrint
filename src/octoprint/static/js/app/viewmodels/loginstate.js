@@ -24,7 +24,7 @@ function LoginStateViewModel() {
 
     self.requestData = function() {
         $.ajax({
-            url: AJAX_BASEURL + "login",
+            url: API_BASEURL + "login",
             type: "POST",
             data: {"passive": true},
             success: self.fromResponse
@@ -63,25 +63,25 @@ function LoginStateViewModel() {
         $("#login_remember").prop("checked", false);
 
         $.ajax({
-            url: AJAX_BASEURL + "login",
+            url: API_BASEURL + "login",
             type: "POST",
             data: {"user": username, "pass": password, "remember": remember},
             success: function(response) {
-                $.pnotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
+                new PNotify({title: "Login successful", text: "You are now logged in as \"" + response.name + "\"", type: "success"});
                 self.fromResponse(response);
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                $.pnotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
+                new PNotify({title: "Login failed", text: "User unknown or wrong password", type: "error"});
             }
         })
     }
 
     self.logout = function() {
         $.ajax({
-            url: AJAX_BASEURL + "logout",
+            url: API_BASEURL + "logout",
             type: "POST",
             success: function(response) {
-                $.pnotify({title: "Logout successful", text: "You are now logged out", type: "success"});
+                new PNotify({title: "Logout successful", text: "You are now logged out", type: "success"});
                 self.fromResponse(response);
             }
         })

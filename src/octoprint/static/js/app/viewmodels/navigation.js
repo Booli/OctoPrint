@@ -9,27 +9,32 @@ function NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsV
     self.triggerAction = function(action) {
         var callback = function() {
             $.ajax({
-                url: AJAX_BASEURL + "system",
+                url: API_BASEURL + "system",
                 type: "POST",
                 dataType: "json",
                 data: "action=" + action.action,
                 success: function() {
-                    $.pnotify({title: "Success", text: "The command \""+ action.name +"\" executed successfully", type: "success"});
+                    new PNotify({title: "Success", text: "The command \""+ action.name +"\" executed successfully", type: "success"});
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                    $.pnotify({title: "Error", text: "<p>The command \"" + action.name + "\" could not be executed.</p><p>Reason: <pre>" + jqXHR.responseText + "</pre></p>", type: "error"});
+                    var error = "<p>The command \"" + action.name + "\" could not be executed.</p>";
+                    error += pnotifyAdditionalInfo("<pre>" + jqXHR.responseText + "</pre>");
+                    new PNotify({title: "Error", text: error, type: "error", hide: false});
                 }
             })
         }
         if (action.confirm) {
-            $("#confirmation_dialog .confirmation_dialog_message").text(action.confirm);
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").bind("click", function(e) {
+            var confirmationDialog = $("#confirmation_dialog");
+            var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+            $(".confirmation_dialog_message", confirmationDialog).text(action.confirm);
+            confirmationDialogAck.unbind("click");
+            confirmationDialogAck.bind("click", function(e) {
                 e.preventDefault();
                 $("#confirmation_dialog").modal("hide");
                 callback();
             });
-            $("#confirmation_dialog").modal("show");
+            confirmationDialog.modal("show");
         } else {
             callback();
         }

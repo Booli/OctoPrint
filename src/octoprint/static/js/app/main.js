@@ -1,5 +1,4 @@
 $(function() {
-
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -12,8 +11,9 @@ $(function() {
         var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
         var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
         var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
-        var gcodeViewModel = new GcodeViewModel(loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
 
         var dataUpdater = new DataUpdater(
             loginStateViewModel,
@@ -24,14 +24,22 @@ $(function() {
             terminalViewModel,
             gcodeFilesViewModel,
             timelapseViewModel,
-            gcodeViewModel
+            gcodeViewModel,
+            logViewModel
         );
-        
+
+        PNotify.prototype.options.styling = "bootstrap2";
+
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
         $.ajaxSetup({
             type: 'POST',
             headers: { "cache-control": "no-cache" }
+        });
+
+        // send the current UI API key with any request
+        $.ajaxSetup({
+            headers: {"X-Api-Key": UI_API_KEY}
         });
 
         //~~ Show settings - to ensure centered
@@ -51,31 +59,31 @@ $(function() {
             terminalViewModel.updateOutput();
         });
 
-        var webcamDisableTimeout;
-        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
-            var current = e.target;
-            var previous = e.relatedTarget;
+        //~~ File list
 
-            if (current.hash == "#control") {
-                clearTimeout(webcamDisableTimeout);
-                var webcamImage = $("#webcam_image");
-                var currentSrc = webcamImage.attr("src");
-                if (currentSrc === undefined || currentSrc.trim() == "") {
-                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-                }
-            } else if (previous.hash == "#control") {
-                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
-                // more load by the constant connection creation than by the actual webcam stream
-                webcamDisableTimeout = setTimeout(function() {
-                    $("#webcam_image").attr("src", "");
-                }, 5000);
-            }
+        $(".gcode_files").slimScroll({
+            height: "306px",
+            size: "5px",
+            distance: "0",
+            railVisible: true,
+            alwaysVisible: true,
+            scrollBy: "102px"
         });
 
         //~~ Gcode upload
 
         function gcode_upload_done(e, data) {
-            gcodeFilesViewModel.fromResponse(data.result);
+            var filename = undefined;
+            var location = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                filename = data.result.files.sdcard.name;
+                location = "sdcard";
+            } else if (data.result.files.hasOwnProperty("local")) {
+                filename = data.result.files.local.name;
+                location = "local";
+            }
+            gcodeFilesViewModel.requestData(filename, location);
+
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
@@ -84,9 +92,11 @@ $(function() {
         }
 
         function gcode_upload_fail(e, data) {
-            $.pnotify({
+            var error = "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.</p>";
+            error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            new PNotify({
                 title: "Upload failed",
-                text: "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and Cura support is enabled and configured.</p><p>Server reported: <pre>" + data.jqXHR.responseText + "</pre></p>",
+                text: error,
                 type: "error",
                 hide: false
             });
@@ -107,7 +117,7 @@ $(function() {
 
         function enable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: localTarget,
                 done: gcode_upload_done,
@@ -118,7 +128,7 @@ $(function() {
 
         function disable_local_dropzone() {
             $("#gcode_upload").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/local",
+                url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: null,
                 done: gcode_upload_done,
@@ -129,7 +139,7 @@ $(function() {
 
         function enable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: $("#drop_sd"),
                 done: gcode_upload_done,
@@ -140,10 +150,9 @@ $(function() {
 
         function disable_sd_dropzone() {
             $("#gcode_upload_sd").fileupload({
-                url: AJAX_BASEURL + "gcodefiles/sdcard",
+                url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: null,
-                formData: {target: "sd"},
                 done: gcode_upload_done,
                 fail: gcode_upload_fail,
                 progressall: gcode_upload_progress
@@ -255,6 +264,10 @@ $(function() {
         //~~ Offline overlay
         $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
+        //~~ Underscore setup
+
+        _.mixin(_.str.exports());
+
         //~~ knockout.js bindings
 
         ko.bindingHandlers.popover = {
@@ -272,7 +285,25 @@ $(function() {
                 };
                 $(element).popover(options);
             }
-        }
+        };
+
+        ko.bindingHandlers.allowBindings = {
+            init: function (elem, valueAccessor) {
+                return { controlsDescendantBindings: !valueAccessor() };
+            }
+        };
+
+        ko.bindingHandlers.slimScrolledForeach = {
+            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                return ko.bindingHandlers.foreach.init(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            },
+            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+                setTimeout(function() {
+                    $(element).slimScroll({scrollBy: 0});
+                }, 10);
+                return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
+            }
+        };
 
         ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
         ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
@@ -282,20 +313,18 @@ $(function() {
         ko.applyBindings(terminalViewModel, document.getElementById("term"));
         var gcode = document.getElementById("gcode");
         if (gcode) {
+            gcodeViewModel.initialize();
             ko.applyBindings(gcodeViewModel, gcode);
         }
         ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
         ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
         ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
         ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
 
         var timelapseElement = document.getElementById("timelapse");
         if (timelapseElement) {
             ko.applyBindings(timelapseViewModel, timelapseElement);
-        }
-        var gCodeVisualizerElement = document.getElementById("gcode");
-        if (gCodeVisualizerElement) {
-            gcodeViewModel.initialize();
         }
 
         //~~ startup commands
@@ -305,12 +334,13 @@ $(function() {
         controlViewModel.requestData();
         gcodeFilesViewModel.requestData();
         timelapseViewModel.requestData();
+        settingsViewModel.requestData();
+        logViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
                 $("#gcode_upload").fileupload("enable");
 
-                settingsViewModel.requestData();
                 if (data.admin) {
                     usersViewModel.requestData();
                 }
@@ -321,22 +351,42 @@ $(function() {
 
         //~~ UI stuff
 
+        var webcamDisableTimeout;
+        $('#tabs a[data-toggle="tab"]').on('show', function (e) {
+            var current = e.target;
+            var previous = e.relatedTarget;
+
+            if (current.hash == "#control") {
+                clearTimeout(webcamDisableTimeout);
+                var webcamImage = $("#webcam_image");
+                var currentSrc = webcamImage.attr("src");
+                if (currentSrc === undefined || currentSrc.trim() == "") {
+                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                }
+            } else if (previous.hash == "#control") {
+                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
+                // more load by the constant connection creation than by the actual webcam stream
+                webcamDisableTimeout = setTimeout(function() {
+                    $("#webcam_image").attr("src", "");
+                }, 5000);
+            }
+        });
+
         $(".accordion-toggle[href='#files']").click(function() {
-            if ($("#files").hasClass("in")) {
-                $("#files").removeClass("overflow_visible");
+            var files = $("#files");
+            if (files.hasClass("in")) {
+                files.removeClass("overflow_visible");
             } else {
                 setTimeout(function() {
-                    $("#files").addClass("overflow_visible");
+                    files.addClass("overflow_visible");
                 }, 1000);
             }
-        })
-
-        $.pnotify.defaults.history = false;
+        });
 
         $.fn.modal.defaults.maxHeight = function(){
             // subtract the height of the modal header and footer
             return $(window).height() - 165;
-        }
+        };
 
         // Fix input element click problem on login dialog
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -347,11 +397,23 @@ $(function() {
             e.preventDefault();
         });
 
+        $("#login_user").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_pass").focus();
+            }
+        });
+        $("#login_pass").keyup(function(event) {
+            if (event.keyCode == 13) {
+                $("#login_button").click();
+            }
+        });
+
         if (CONFIG_FIRST_RUN) {
             var firstRunViewModel = new FirstRunViewModel();
             ko.applyBindings(firstRunViewModel, document.getElementById("first_run_dialog"));
             firstRunViewModel.showDialog();
         }
+
     }
 );
 

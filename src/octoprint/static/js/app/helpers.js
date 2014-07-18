@@ -8,6 +8,8 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.defaultFilters = defaultFilters;
     self.exclusiveFilters = exclusiveFilters;
 
+    self.searchFunction = undefined;
+
     self.allItems = [];
 
     self.items = ko.observableArray([]);
@@ -19,10 +21,14 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     //~~ item handling
 
+    self.refresh = function() {
+        self._updateItems();
+    };
+
     self.updateItems = function(items) {
         self.allItems = items;
         self._updateItems();
-    }
+    };
 
     self.selectItem = function(matcher) {
         var itemList = self.items();
@@ -32,37 +38,41 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
                 break;
             }
         }
-    }
+    };
 
     self.selectNone = function() {
         self.selectedItem(undefined);
-    }
+    };
 
     self.isSelected = function(data) {
         return self.selectedItem() == data;
-    }
+    };
 
     self.isSelectedByMatcher = function(matcher) {
         return matcher(self.selectedItem());
-    }
+    };
 
     //~~ pagination
 
     self.paginatedItems = ko.dependentObservable(function() {
         if (self.items() == undefined) {
             return [];
+        } else if (self.pageSize() == 0) {
+            return self.items();
         } else {
             var from = Math.max(self.currentPage() * self.pageSize(), 0);
             var to = Math.min(from + self.pageSize(), self.items().length);
             return self.items().slice(from, to);
         }
-    })
+    });
     self.lastPage = ko.dependentObservable(function() {
-        return Math.ceil(self.items().length / self.pageSize()) - 1;
-    })
+        return (self.pageSize() == 0 ? 1 : Math.ceil(self.items().length / self.pageSize()) - 1);
+    });
     self.pages = ko.dependentObservable(function() {
         var pages = [];
-        if (self.lastPage() < 7) {
+        if (self.pageSize() == 0) {
+            pages.push({ number: 0, text: 1 });
+        } else if (self.lastPage() < 7) {
             for (var i = 0; i < self.lastPage() + 1; i++) {
                 pages.push({ number: i, text: i+1 });
             }
@@ -88,7 +98,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             pages.push({ number: self.lastPage(), text: self.lastPage() + 1})
         }
         return pages;
-    })
+    });
 
     self.switchToItem = function(matcher) {
         var pos = -1;
@@ -104,23 +114,22 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             var page = Math.floor(pos / self.pageSize());
             self.changePage(page);
         }
-    }
+    };
 
     self.changePage = function(newPage) {
         if (newPage < 0 || newPage > self.lastPage())
             return;
         self.currentPage(newPage);
-    }
-    self.prevPage = function() {
+    };    self.prevPage = function() {
         if (self.currentPage() > 0) {
             self.currentPage(self.currentPage() - 1);
         }
-    }
+    };
     self.nextPage = function() {
         if (self.currentPage() < self.lastPage()) {
             self.currentPage(self.currentPage() + 1);
         }
-    }
+    };
 
     self.getItem = function(matcher) {
         var itemList = self.items();
@@ -131,7 +140,19 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
 
         return undefined;
-    }
+    };
+
+    //~~ searching
+
+    self.changeSearchFunction = function(searchFunction) {
+        self.searchFunction = searchFunction;
+        self.changePage(0);
+        self._updateItems();
+    };
+
+    self.resetSearch = function() {
+        self.changeSearchFunction(undefined);
+    };
 
     //~~ sorting
 
@@ -144,7 +165,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
         self.changePage(0);
         self._updateItems();
-    }
+    };
 
     //~~ filtering
 
@@ -157,7 +178,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         } else {
             self.addFilter(filter);
         }
-    }
+    };
 
     self.addFilter = function(filter) {
         if (!_.contains(_.keys(self.supportedFilters), filter))
@@ -180,7 +201,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
         self.changePage(0);
         self._updateItems();
-    }
+    };
 
     self.removeFilter = function(filter) {
         if (!_.contains(_.keys(self.supportedFilters), filter))
@@ -193,7 +214,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
         self.changePage(0);
         self._updateItems();
-    }
+    };
 
     //~~ update for sorted and filtered view
 
@@ -215,13 +236,18 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
                 result = _.filter(result, supportedFilters[filter]);
         });
 
+        // search if necessary
+        if (typeof self.searchFunction !== undefined && self.searchFunction) {
+            result = _.filter(result, self.searchFunction);
+        }
+
         // sort if necessary
         if (typeof comparator !== undefined)
             result.sort(comparator);
 
         // set result list
         self.items(result);
-    }
+    };
 
     //~~ local storage
 
@@ -233,7 +259,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             else
                 localStorage[self.listType + "." + "currentSorting"] = undefined;
         }
-    }
+    };
 
     self._loadCurrentSortingFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
@@ -242,20 +268,20 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             else
                 self.currentSorting(defaultSorting);
         }
-    }
+    };
 
     self._saveCurrentFiltersToLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
             var filters = _.intersection(_.keys(self.supportedFilters), self.currentFilters());
             localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(filters);
         }
-    }
+    };
 
     self._loadCurrentFiltersFromLocalStorage = function() {
         if ( self._initializeLocalStorage() ) {
             self.currentFilters(_.intersection(_.keys(self.supportedFilters), JSON.parse(localStorage[self.listType + "." + "currentFilters"])));
         }
-    }
+    };
 
     self._initializeLocalStorage = function() {
         if (!Modernizr.localstorage)
@@ -268,8 +294,68 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         localStorage[self.listType + "." + "currentFilters"] = JSON.stringify(self.defaultFilters);
 
         return true;
-    }
+    };
 
     self._loadCurrentFiltersFromLocalStorage();
     self._loadCurrentSortingFromLocalStorage();
+}
+
+function formatSize(bytes) {
+    if (!bytes) return "-";
+
+    var units = ["bytes", "KB", "MB", "GB"];
+    for (var i = 0; i < units.length; i++) {
+        if (bytes < 1024) {
+            return _.sprintf("%3.1f%s", bytes, units[i]);
+        }
+        bytes /= 1024;
+    }
+    return _.sprintf("%.1f%s", bytes, "TB");
+}
+
+function formatDuration(seconds) {
+    if (!seconds) return "-";
+    if (seconds < 0) return "00:00:00";
+
+    var s = seconds % 60;
+    var m = (seconds % 3600) / 60;
+    var h = seconds / 3600;
+
+    return _.sprintf("%02d:%02d:%02d", h, m, s);
+}
+
+function formatDate(unixTimestamp) {
+    if (!unixTimestamp) return "-";
+    return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
+}
+
+function formatTimeAgo(unixTimestamp) {
+    if (!unixTimestamp) return "-";
+    return moment.unix(unixTimestamp).fromNow();
+}
+
+function formatFilament(filament) {
+    if (!filament || !filament["length"]) return "-";
+    var result = _.sprintf("%.02fm", (filament["length"] / 1000));
+    if (filament.hasOwnProperty("volume") && filament.volume) {
+        result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
+    }
+    return result;
+}
+
+function cleanTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return temp;
+}
+
+function formatTemperature(temp) {
+    if (!temp || temp < 10) return "off";
+    return _.sprintf("%.1f&deg;C", temp);
+}
+
+function pnotifyAdditionalInfo(inner) {
+    return '<div class="pnotify_additional_info">'
+        + '<div class="pnotify_more"><a href="#" onclick="$(this).children().toggleClass(\'icon-caret-right icon-caret-down\').parent().parent().next().slideToggle(\'fast\')">More <i class="icon-caret-right"></i></a></div>'
+        + '<div class="pnotify_more_container hide">' + inner + '</div>'
+        + '</div>';
 }

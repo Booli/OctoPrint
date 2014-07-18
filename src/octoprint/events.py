@@ -15,11 +15,71 @@ from octoprint.settings import settings
 # singleton
 _instance = None
 
+
+class Events(object):
+	# application startup
+	STARTUP = "Startup"
+
+	# connect/disconnect to printer
+	CONNECTED = "Connected"
+	DISCONNECTED = "Disconnected"
+
+	# connect/disconnect by client
+	CLIENT_OPENED = "ClientOpened"
+	CLIENT_CLOSED = "ClientClosed"
+
+	# File management
+	UPLOAD = "Upload"
+	FILE_SELECTED = "FileSelected"
+	FILE_DESELECTED = "FileDeselected"
+	UPDATED_FILES = "UpdatedFiles"
+	METADATA_ANALYSIS_STARTED = "MetadataAnalysisStarted"
+	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
+
+	# SD Upload
+	TRANSFER_STARTED = "TransferStarted"
+	TRANSFER_DONE = "TransferDone"
+
+	# print job
+	PRINT_STARTED = "PrintStarted"
+	PRINT_DONE = "PrintDone"
+	PRINT_FAILED = "PrintFailed"
+	PRINT_CANCELLED = "PrintCancelled"
+	PRINT_PAUSED = "PrintPaused"
+	PRINT_RESUMED = "PrintResumed"
+	ERROR = "Error"
+
+	# print/gcode events
+	POWER_ON = "PowerOn"
+	POWER_OFF = "PowerOff"
+	HOME = "Home"
+	Z_CHANGE = "ZChange"
+	WAITING = "Waiting"
+	COOLING = "Cooling"
+	ALERT = "Alert"
+	CONVEYOR = "Conveyor"
+	EJECT = "Eject"
+	E_STOP = "EStop"
+
+	# Timelapse
+	CAPTURE_START = "CaptureStart"
+	CAPTURE_DONE = "CaptureDone"
+	MOVIE_RENDERING = "MovieRendering"
+	MOVIE_DONE = "MovieDone"
+	MOVIE_FAILED = "MovieFailed"
+
+	# Slicing
+	SLICING_STARTED = "SlicingStarted"
+	SLICING_DONE = "SlicingDone"
+	SLICING_FAILED = "SlicingFailed"
+
+
 def eventManager():
 	global _instance
 	if _instance is None:
 		_instance = EventManager()
 	return _instance
+
 
 class EventManager(object):
 	"""
@@ -97,6 +157,7 @@ class EventManager(object):
 		self._registeredListeners[event].remove(callback)
 		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
 
+
 class GenericEventListener(object):
 	"""
 	The GenericEventListener can be subclassed to easily create custom event listeners.
@@ -128,51 +189,56 @@ class GenericEventListener(object):
 		"""
 		pass
 
+
 class DebugEventListener(GenericEventListener):
 	def __init__(self):
 		GenericEventListener.__init__(self)
 
-		events = ["Startup", "Connected", "Disconnected", "ClientOpen", "ClientClosed", "PowerOn", "PowerOff", "Upload",
-				  "FileSelected", "TransferStarted", "TransferDone", "PrintStarted", "PrintDone", "PrintFailed",
-				  "Cancelled", "Home", "ZChange", "Paused", "Waiting", "Cooling", "Alert", "Conveyor", "Eject",
-				  "CaptureStart", "CaptureDone", "MovieDone", "EStop", "Error"]
+		events = filter(lambda x: not x.startswith("__"), dir(Events))
 		self.subscribe(events)
 
 	def eventCallback(self, event, payload):
 		GenericEventListener.eventCallback(self, event, payload)
 		self._logger.debug("Received event: %s (Payload: %r)" % (event, payload))
 
+
 class CommandTrigger(GenericEventListener):
-	def __init__(self, triggerType, printer):
+	def __init__(self, printer):
 		GenericEventListener.__init__(self)
 		self._printer = printer
 		self._subscriptions = {}
 
-		self._initSubscriptions(triggerType)
+		self._initSubscriptions()
 
-	def _initSubscriptions(self, triggerType):
+	def _initSubscriptions(self):
 		"""
 		Subscribes all events as defined in "events > $triggerType > subscriptions" in the settings with their
 		respective commands.
 		"""
-		if not settings().get(["events", triggerType]):
+		if not settings().get(["events"]):
 			return
 
-		if not settings().getBoolean(["events", triggerType, "enabled"]):
+		if not settings().getBoolean(["events", "enabled"]):
 			return
 
 		eventsToSubscribe = []
-		for subscription in settings().get(["events", triggerType, "subscriptions"]):
-			if not "event" in subscription.keys() or not "command" in subscription.keys():
-				self._logger.info("Invalid %s, missing either event or command: %r" % (triggerType, subscription))
+		for subscription in settings().get(["events", "subscriptions"]):
+			if not "event" in subscription.keys() or not "command" in subscription.keys() \
+					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
+				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: %r" % subscription)
+				continue
+
+			if "enabled" in subscription.keys() and not subscription["enabled"]:
+				self._logger.info("Disabled command trigger: %r" % subscription)
 				continue
 
 			event = subscription["event"]
 			command = subscription["command"]
+			commandType = subscription["type"]
 
 			if not event in self._subscriptions.keys():
 				self._subscriptions[event] = []
-			self._subscriptions[event].append(command)
+			self._subscriptions[event].append((command, commandType))
 
 			if not event in eventsToSubscribe:
 				eventsToSubscribe.append(event)
@@ -190,15 +256,48 @@ class CommandTrigger(GenericEventListener):
 		if not event in self._subscriptions:
 			return
 
-		for command in self._subscriptions[event]:
-			processedCommand = self._processCommand(command, payload)
-			self.executeCommand(processedCommand)
+		for command, commandType in self._subscriptions[event]:
+			try:
+				if isinstance(command, (tuple, list, set)):
+					processedCommand = []
+					for c in command:
+						processedCommand.append(self._processCommand(c, payload))
+				else:
+					processedCommand = self._processCommand(command, payload)
+				self.executeCommand(processedCommand, commandType)
+			except KeyError, e:
+				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
-	def executeCommand(self, command):
-		"""
-		Not implemented, override in child classes
-		"""
-		pass
+	def executeCommand(self, command, commandType):
+		if commandType == "system":
+			self._executeSystemCommand(command)
+		elif commandType == "gcode":
+			self._executeGcodeCommand(command)
+
+	def _executeSystemCommand(self, command):
+		def commandExecutioner(command):
+			self._logger.info("Executing system command: %s" % command)
+			subprocess.Popen(command, shell=True)
+
+		try:
+			if isinstance(command, (list, tuple, set)):
+				for c in command:
+					commandExecutioner(c)
+			else:
+				commandExecutioner(command)
+		except subprocess.CalledProcessError, e:
+			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
+		except Exception, ex:
+			self._logger.exception("Command failed")
+
+	def _executeGcodeCommand(self, command):
+		commands = [command]
+		if isinstance(command, (list, tuple, set)):
+			self.logger.debug("Executing GCode commands: %r" % command)
+			commands = list(command)
+		else:
+			self._logger.debug("Executing GCode command: %s" % command)
+		self._printer.commands(commands)
 
 	def _processCommand(self, command, payload):
 		"""
@@ -206,59 +305,36 @@ class CommandTrigger(GenericEventListener):
 
 		The following substitutions are currently supported:
 
-		  - %(currentZ)s : current Z position of the print head, or -1 if not available
-		  - %(filename)s : current selected filename, or "NO FILE" if no file is selected
-		  - %(progress)s : current print progress in percent, 0 if no print is in progress
-		  - %(data)s : the string representation of the event's payload
-		  - %(now)s : ISO 8601 representation of the current date and time
+		  - {__currentZ} : current Z position of the print head, or -1 if not available
+		  - {__filename} : current selected filename, or "NO FILE" if no file is selected
+		  - {__progress} : current print progress in percent, 0 if no print is in progress
+		  - {__data} : the string representation of the event's payload
+		  - {__now} : ISO 8601 representation of the current date and time
+
+		Additionally, the keys of the event's payload can also be used as placeholder.
 		"""
 
 		params = {
-			"currentZ": "-1",
-			"filename": "NO FILE",
-			"progress": "0",
-			"data": str(payload),
-			"now": datetime.datetime.now().isoformat()
+			"__currentZ": "-1",
+			"__filename": "NO FILE",
+			"__progress": "0",
+			"__data": str(payload),
+			"__now": datetime.datetime.now().isoformat()
 		}
 
 		currentData = self._printer.getCurrentData()
 
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
-			params["currentZ"] = str(currentData["currentZ"])
+			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData.keys() and currentData["job"] is not None:
-			params["filename"] = currentData["job"]["filename"]
+			params["__filename"] = currentData["job"]["file"]["name"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "progress" in currentData["progress"].keys() and currentData["progress"]["progress"] is not None:
-				params["progress"] = str(round(currentData["progress"]["progress"] * 100))
+				params["__progress"] = str(round(currentData["progress"]["progress"] * 100))
 
-		return command % params
+		# now add the payload keys as well
+		if isinstance(payload, dict):
+			params.update(payload)
 
-class SystemCommandTrigger(CommandTrigger):
-	"""
-	Performs configured system commands for configured events.
-	"""
-
-	def __init__(self, printer):
-		CommandTrigger.__init__(self, "systemCommandTrigger", printer)
-
-	def executeCommand(self, command):
-		try:
-			self._logger.info("Executing system command: %s" % command)
-			subprocess.Popen(command, shell=True)
-		except subprocess.CalledProcessError, e:
-			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, e.message))
-		except Exception, ex:
-			self._logger.exception("Command failed")
-
-class GcodeCommandTrigger(CommandTrigger):
-	"""
-	Sends configured GCODE commands to the printer for configured events.
-	"""
-
-	def __init__(self, printer):
-		CommandTrigger.__init__(self, "gcodeCommandTrigger", printer)
-
-	def executeCommand(self, command):
-		self._logger.debug("Executing GCode command: %s" % command)
-		self._printer.commands(command.split(","))
+		return command.format(**params)
