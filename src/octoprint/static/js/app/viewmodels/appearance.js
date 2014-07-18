@@ -6,15 +6,15 @@ function AppearanceViewModel(settingsViewModel) {
 
     self.brand = ko.computed(function() {
         if (self.name())
-            return "OctoPrint: " + self.name();
+            return "LilyPrint: " + self.name();
         else
-            return "OctoPrint";
+            return "LilyPrint";
     })
 
     self.title = ko.computed(function() {
         if (self.name())
-            return self.name() + " [OctoPrint]";
+            return self.name() + " [LilyPrint]";
         else
-            return "OctoPrint";
+            return "LilyPrint";
     })
 }
