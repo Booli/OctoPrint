@@ -3119,6 +3119,14 @@ table th[class*="span"],
   height: auto;
 }
 
+.collapse.width {
+    height: auto;
+    -webkit-transition: width 0.35s ease;
+    -moz-transition: width 0.35s ease;
+    -o-transition: width 0.35s ease;
+    transition: width 0.35s ease;
+}
+
 .close {
   float: right;
   font-size: 20px;
