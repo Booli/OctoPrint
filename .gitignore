@@ -11,6 +11,8 @@ win32-Cura-*
 linux-Cura-*
 *.iml
 Printrun
+*.codekit
+*.esproj
 =======
 .idea
 .DS_Store
