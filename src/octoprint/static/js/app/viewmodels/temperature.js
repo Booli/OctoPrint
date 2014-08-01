@@ -19,7 +19,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.tools = ko.observableArray([]);
     self.hasBed = ko.observable(true);
     self.bedTemp = self._createToolEntry();
-    self.bedTemp["name"]("Bed");
+    self.bedTemp["name"]("Chamber");
     self.bedTemp["key"]("bed");
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -54,6 +54,11 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 tools[extruder]["name"]("Tool " + extruder);
                 tools[extruder]["key"]("tool" + extruder);
             }
+            //hack Xeed 
+            tools[0]["name"]("Front");
+            tools[0]["key"]("tool" + 0);
+            tools[1]["name"]("Back");
+            tools[1]["key"]("tool" + 1);
         } else {
             // only one extruder, no need to add numbers
             var color = graphColors[0];
@@ -67,7 +72,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
         }
 
         // print bed
-        heaterOptions["bed"] = {name: "Bed", color: "blue"};
+        heaterOptions["bed"] = {name: "Chamber", color: "blue"};
 
         // write back
         self.heaterOptions(heaterOptions);

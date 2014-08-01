@@ -87,6 +87,7 @@ gcodeToEvent = {
 
 	# user alert
 	"M300": Events.ALERT,
+	"M404": Events.ALERT,
 
 	# home print head
 	"G28": Events.HOME,
@@ -112,7 +113,7 @@ class MachineCom(object):
 	STATE_ERROR = 9
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
-	
+
 	def __init__(self, port = None, baudrate = None, callbackObject = None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
@@ -223,7 +224,7 @@ class MachineCom(object):
 
 	def getState(self):
 		return self._state
-	
+
 	def getStateString(self):
 		if self._state == self.STATE_NONE:
 			return "Offline"
@@ -255,7 +256,7 @@ class MachineCom(object):
 		if self._state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
 		return "?%d?" % (self._state)
-	
+
 	def getShortErrorString(self):
 		if len(self._errorValue) < 20:
 			return self._errorValue
@@ -263,16 +264,16 @@ class MachineCom(object):
 
 	def getErrorString(self):
 		return self._errorValue
-	
+
 	def isClosedOrError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
 
 	def isError(self):
 		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
-	
+
 	def isOperational(self):
 		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_TRANSFERING_FILE
-	
+
 	def isPrinting(self):
 		return self._state == self.STATE_PRINTING
 
@@ -325,7 +326,7 @@ class MachineCom(object):
 
 	def getTemp(self):
 		return self._temp
-	
+
 	def getBedTemp(self):
 		return self._bedTemp
 
