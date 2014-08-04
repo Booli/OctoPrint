@@ -24,14 +24,14 @@ def settings(init=False, configfile=None, basedir=None):
 
 default_settings = {
 	"serial": {
-		"port": None,
-		"baudrate": None,
-		"autoconnect": False,
+		"port": "/dev/ttyUSB0",
+		"baudrate": 115200,
+		"autoconnect": True,
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 5,
+			"communication": 60,
 			"temperature": 5,
 			"sdStatus": 1
 		},
@@ -40,7 +40,7 @@ default_settings = {
 	"server": {
 		"host": "0.0.0.0",
 		"port": 5000,
-		"firstRun": True,
+		"firstRun": False,
 		"baseUrl": "",
 		"scheme": ""
 	},
@@ -59,7 +59,7 @@ default_settings = {
 		}
 	},
 	"gcodeViewer": {
-		"enabled": True,
+		"enabled": False,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
@@ -67,7 +67,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": True,
+		"sdSupport": False,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False
@@ -83,8 +83,8 @@ default_settings = {
 	"temperature": {
 		"profiles":
 			[
-				{"name": "ABS", "extruder" : 210, "bed" : 100 },
-				{"name": "PLA", "extruder" : 180, "bed" : 60 }
+				{"name": "ABS", "extruder" : 230, "bed" : 0 },
+				{"name": "PLA", "extruder" : 200, "bed" : 70 }
 			]
 	},
 	"printerParameters": {
@@ -96,16 +96,16 @@ default_settings = {
 		},
 		"pauseTriggers": [],
 		"invertAxes": [],
-		"numExtruders": 1,
+		"numExtruders": 2,
 		"extruderOffsets": [
 			{"x": 0.0, "y": 0.0}
 		],
 		"bedDimensions": {
-			"x": 200.0, "y": 200.0, "r": 100
+			"x": 300.0, "y": 245.0, "r": 100
 		}
 	},
 	"appearance": {
-		"name": "",
+		"name": "Xeed",
 		"color": "default"
 	},
 	"controls": [],
