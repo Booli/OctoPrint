@@ -1095,6 +1095,7 @@ ul.dropdown-menu li a {
 #control .jog-panel {
   float: left;
   margin-right: 19px;
+  font-size: 2em;
 }
 #control h1 {
   text-align: left;
