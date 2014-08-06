@@ -24,4 +24,3 @@ pypy
 OctoPrint.egg-info
 *.orig
 
-src/octoprint/templates/index.jinja2
