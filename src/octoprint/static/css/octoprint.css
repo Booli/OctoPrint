@@ -1091,11 +1091,6 @@ ul.dropdown-menu li a {
 /** Control tab */
 #control {
   overflow: hidden;
-  /**
-  .jog-panel > div.distance {
-    text-align: left;
-  }
-*/
 }
 #control .jog-panel {
   float: left;
@@ -1106,6 +1101,9 @@ ul.dropdown-menu li a {
 }
 #control .jog-panel > div {
   text-align: center;
+}
+#control .jog-panel > div.distance {
+  text-align: left;
 }
 #control .box {
   width: 60px;
@@ -1119,7 +1117,7 @@ ul.dropdown-menu li a {
   display: block;
   height: 60px;
   margin-bottom: 10px;
-  font-size: 1.5em;
+  font-size: 1.2em;
 }
 #control .btn-group {
   margin-bottom: 10px;
@@ -1127,9 +1125,6 @@ ul.dropdown-menu li a {
 #control .btn-group.distance > .btn {
   width: 43px;
   padding: 3px 0;
-}
-#jog_distance .btn-group {
-  font-size: 20px;
 }
 /** GCODE viewer */
 #gcode .progress {
