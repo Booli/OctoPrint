@@ -106,13 +106,18 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
         self.isSdReady(data.flags.sdReady);
     };
 
+    self._otherRequestInProgress = false;
     self.requestData = function(filenameToFocus, locationToFocus) {
+        if (self._otherRequestInProgress) return;
+
+        self._otherRequestInProgress = true;
         $.ajax({
             url: API_BASEURL + "files",
             method: "GET",
             dataType: "json",
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
+                self._otherRequestInProgress = false;
             }
         });
     };
@@ -274,12 +279,12 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
                     } while (filament.hasOwnProperty("tool" + i));
                 }
             }
-            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]);
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += "<br>Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]);
+            output += "Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += "<br>Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += "Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;
