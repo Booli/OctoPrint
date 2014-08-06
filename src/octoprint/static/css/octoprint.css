@@ -1095,7 +1095,6 @@ ul.dropdown-menu li a {
 #control .jog-panel {
   float: left;
   margin-right: 19px;
-  font-size: 2em;
 }
 #control h1 {
   text-align: left;
@@ -1118,6 +1117,7 @@ ul.dropdown-menu li a {
   display: block;
   height: 60px;
   margin-bottom: 10px;
+  font-size: 1.5em;
 }
 #control .btn-group {
   margin-bottom: 10px;
@@ -1125,7 +1125,8 @@ ul.dropdown-menu li a {
 #control .btn-group.distance > .btn {
   width: 43px;
   padding: 3px 0;
-  height: 30px;
+  height: 60px;
+  font-size: 1.5em;
 }
 /** GCODE viewer */
 #gcode .progress {
