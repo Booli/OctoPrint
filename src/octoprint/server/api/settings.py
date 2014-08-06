@@ -42,6 +42,7 @@ def getSettings():
 			"movementSpeedE": movementSpeedE,
 			"invertAxes": s.get(["printerParameters", "invertAxes"]),
 			"numExtruders": s.get(["printerParameters", "numExtruders"]),
+			"zOffset": s.get(["printerParameters", "zOffset"]),
 			"extruderOffsets": s.get(["printerParameters", "extruderOffsets"]),
 			"bedDimensions": s.get(["printerParameters", "bedDimensions"])
 		},
@@ -199,4 +200,3 @@ def setSettings():
 		s.save()
 
 	return getSettings()
-
