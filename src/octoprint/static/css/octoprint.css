@@ -1128,7 +1128,7 @@ ul.dropdown-menu li a {
   width: 43px;
   padding: 3px 0;
 }
-#jog_distance {
+#jog_distance .btn-group {
   font-size: 20px;
 }
 /** GCODE viewer */
