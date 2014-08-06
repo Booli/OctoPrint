@@ -283,7 +283,7 @@ class Printer():
 			return
 		#Add M206 Z-offset command at start op print
 		zOffset = settings().getFloat(["printerParameters", "zOffset"])
-		self.commands("M206 X0.0 Y0.0 Z%f" % zOffset)
+		self.commands(["M206 X0.0 Y0.0 Z%f" % zOffset])
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
