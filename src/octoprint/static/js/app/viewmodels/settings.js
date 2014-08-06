@@ -19,6 +19,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
     self.printer_movementSpeedE = ko.observable(undefined);
     self.printer_invertAxes = ko.observable(undefined);
     self.printer_numExtruders = ko.observable(undefined);
+    self.printer_zOffset = ko.observable(undefined);
 
     self._printer_extruderOffsets = ko.observableArray([]);
     self.printer_extruderOffsets = ko.computed({
@@ -200,6 +201,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         self.printer_movementSpeedE(response.printer.movementSpeedE);
         self.printer_invertAxes(response.printer.invertAxes);
         self.printer_numExtruders(response.printer.numExtruders);
+        self.printer_zOffset(response.printer.zOffset);
         self.printer_extruderOffsets(response.printer.extruderOffsets);
         self.printer_bedDimensions(response.printer.bedDimensions);
 
@@ -266,6 +268,7 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
                 "movementSpeedE": self.printer_movementSpeedE(),
                 "invertAxes": self.printer_invertAxes(),
                 "numExtruders": self.printer_numExtruders(),
+                "zOffset": self.printer_zOffset(),
                 "extruderOffsets": self.printer_extruderOffsets(),
                 "bedDimensions": self.printer_bedDimensions()
             },
