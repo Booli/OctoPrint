@@ -1,7 +1,7 @@
 # Configuration for /etc/init.d/octoprint
 
 # The init.d script will only run if this variable non-empty.
-OCTOPRINT_USER=pi
+OCTOPRINT_USER=lily
 
 # On what port to run daemon, default is 5000
 PORT=5000
