@@ -109,7 +109,15 @@ default_settings = {
 		"name": "Xeed",
 		"color": "default"
 	},
-	"controls": [],
+	"controls": {
+		"name": "Xeed",
+		"type": "section",
+		"children": [
+			{"command": "G32", "name": "Level bed", "type": "command"},
+			{"command": "G37", "name": "Quick load", "type": "command"},
+			{"command": "G38", "name": "Quick unload", "type": "command"}
+		]
+	},
 	"system": {
 		"actions": []
 	},
