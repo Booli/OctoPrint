@@ -231,9 +231,8 @@
                                 <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                     <tr>
                                         <th style="width: 18%"></th>
-                                        <th style="width: 12%; text-align: right">Actual</th>
-                                        <th style="width: 35%">Target</th>
-                                        <th style="width: 35%">Offset</th>
+                                        <th style="width: 41%; text-align: right">Actual</th>
+                                        <th style="width: 41%">Target</th>
                                     </tr>
                                     <!-- ko foreach: tools -->
                                     <tr data-bind="template: { name: 'temprow-template' }"></tr>
@@ -265,13 +264,6 @@
                                                     </li>
                                                 </ul>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td style="vertical-align: middle">
-                                        <div class="input-append">
-                                            <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
-                                            <span class="add-on">&deg;C</span>
-                                            <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
                                         </div>
                                     </td>
                                 </script>
