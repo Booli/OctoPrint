@@ -218,58 +218,56 @@
 	                                    </div>
 	                                </div>
 	                            </div>
-    					    </div>
+    					            </div>
 	                    </div>
                         <div class="tab-pane" id="temp">
-                            {% if enableTemperatureGraph %}
-                            <div class="row" style="padding-left: 20px">
-                                <div id="temperature-graph"></div>
-                            </div>
-                            {% endif %}
                             <div class="row-fluid">
+                                <div class="span5" style="padding-top: 50px">
+                                    <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
+                                        <tr>
+                                            <th style="width: 25%"></th>
+                                            <th style="width: 20%; text-align: right">Actual</th>
+                                            <th style="width: 55%">Target</th>
+                                        </tr>
+                                        <!-- ko foreach: tools -->
+                                        <tr data-bind="template: { name: 'temprow-template' }"></tr>
+                                        <!-- /ko -->
+                                        <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
+                                    </table>
 
-                                <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
-                                    <tr>
-                                        <th style="width: 18%"></th>
-                                        <th style="width: 12%; text-align: right">Actual</th>
-                                        <th style="width: 35%">Target</th>
-                                        <th style="width: 35%"></th>
-                                    </tr>
-                                    <!-- ko foreach: tools -->
-                                    <tr data-bind="template: { name: 'temprow-template' }"></tr>
-                                    <!-- /ko -->
-                                    <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
-                                </table>
-
-                                <script type="text/html" id="temprow-template">
-                                    <th style="vertical-align: middle" data-bind="text: name"></th>
-                                    <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
-                                    <td style="vertical-align: middle; overflow: visible">
-                                        <div class="input-append">
-                                            <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
-                                            <span class="add-on">&deg;C</span>
-                                            <div class="btn-group">
-                                                <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
-                                                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
-                                                    <span class="caret"></span>
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <!-- ko foreach: $root.temperature_profiles -->
-                                                    <li>
-                                                        <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
-                                                    </li>
-                                                    <!-- /ko -->
-                                                    <li class="divider"></li>
-                                                    <li>
-                                                        <a href="#" data-bind="click: $root.setTargetToZero">Off</a>
-                                                    </li>
-                                                </ul>
+                                    <script type="text/html" id="temprow-template">
+                                        <th style="vertical-align: middle" data-bind="text: name"></th>
+                                        <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
+                                        <td style="vertical-align: middle; overflow: visible">
+                                            <div class="input-append">
+                                                <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
+                                                <span class="add-on">&deg;C</span>
+                                                <div class="btn-group">
+                                                    <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">Set</button>
+                                                    <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
+                                                        <span class="caret"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <!-- ko foreach: $root.temperature_profiles -->
+                                                        <li>
+                                                            <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                                                        </li>
+                                                        <!-- /ko -->
+                                                        <li class="divider"></li>
+                                                        <li>
+                                                            <a href="#" data-bind="click: $root.setTargetToZero">Off</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                    </td>
-                                </script>
+                                        </td>
+                                    </script>
+                                </div>
+                                {% if enableTemperatureGraph %}
+                                <div class="span7" style="padding-left: 20px">
+                                    <div id="temperature-graph"></div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="tab-pane" id="control">
