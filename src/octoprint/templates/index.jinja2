@@ -222,6 +222,11 @@
 	                    </div>
                         <div class="tab-pane" id="temp">
                             <div class="row-fluid">
+                                {% if enableTemperatureGraph %}
+                                <div class="span7" style="padding-left: 20px">
+                                    <div id="temperature-graph"></div>
+                                </div>
+                                {% endif %}
                                 <div class="span5" style="padding-top: 50px">
                                     <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
                                         <tr>
@@ -263,11 +268,6 @@
                                         </td>
                                     </script>
                                 </div>
-                                {% if enableTemperatureGraph %}
-                                <div class="span7" style="padding-left: 20px">
-                                    <div id="temperature-graph"></div>
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                         <div class="tab-pane" id="control">
