@@ -43,6 +43,11 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             tools[0]["name"]("Hotend");
             tools[0]["key"]("tool0");
         }
+        //Hack Xeed
+        tools[0]["name"]("Front");
+        tools[0]["key"]("tool" + 0);
+        tools[1]["name"]("Back");
+        tools[1]["key"]("tool" + 1);
 
         self.tools(tools);
     });
