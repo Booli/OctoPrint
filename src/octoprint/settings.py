@@ -142,7 +142,7 @@ default_settings = {
 			{
 				"event":"Connected",
 				"type":"gcode",
-				"command":"M206 X0.0 Y0.0 Z2.0"
+				"command":"M206 X0.0 Y0.0 Z%f" % self_.getFloat(["printerParameters", "zOffset"])
 			}
 		]
 	},
