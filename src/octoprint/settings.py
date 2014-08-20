@@ -137,8 +137,14 @@ default_settings = {
 		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
-		"enabled": False,
-		"subscriptions": []
+		"enabled": True,
+		"subscriptions": [
+			{
+				"event":"Connected",
+				"type":"gcode",
+				"command":"M206 X0.0 Y0.0 Z2.0"
+			}
+		]
 	},
 	"api": {
 		"enabled": False,
