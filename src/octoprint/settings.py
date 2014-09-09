@@ -97,7 +97,7 @@ default_settings = {
 		"pauseTriggers": [],
 		"invertAxes": [],
 		"numExtruders": 2,
-		"zOffset": 3.15,
+		"zOffset": 2.0,
 		"extruderOffsets": [
 			{"x": 0.0, "y": 0.0}
 		],
