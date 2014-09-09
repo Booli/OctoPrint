@@ -121,7 +121,11 @@ default_settings = {
 		}
 	],
 	"system": {
-		"actions": []
+		"actions": [
+			{"name": "Shutdown", "action": "shutdown", "command": "sudo shutdown -h now", "confirm": "You are about to shutdown the system."},
+			{"name": "Reboot", "action": "reboot", "command": "sudo shutdown -r now", "confirm": "You are about to reboot the system."},
+			{"name": "Update LilyPrint", "action": "update", "command": "cd ~/OctoPrint && git pull && sudo pip install -r requirements.txt", "confirm": "You are about to update LilyPrint, make sure you have a working internet connection and reboot after."}
+		]
 	},
 	"accessControl": {
 		"enabled": False,
