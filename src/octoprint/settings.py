@@ -83,6 +83,7 @@ default_settings = {
 	"temperature": {
 		"profiles":
 			[
+				{"name": "HYBRID", "extruder": 260, "bed" : 0 },
 				{"name": "ABS", "extruder" : 230, "bed" : 70 },
 				{"name": "PLA", "extruder" : 200, "bed" : 0 }
 			]
