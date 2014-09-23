@@ -117,7 +117,7 @@ default_settings = {
 			"name": "Xeed",
 			"type": "section",
 			"children": [
-				{"command": "G32", "name": "Level bed", "type": "command"},
+				{"command": "G32", "name": "Level bed", "type": "command", "confirm": "Do you want to level the bed?"},
 				{"command": "G37", "name": "Quick load", "type": "command"},
 				{"command": "G38", "name": "Quick unload", "type": "command"}
 			]
@@ -145,13 +145,7 @@ default_settings = {
 	},
 	"events": {
 		"enabled": True,
-		"subscriptions": [
-			{
-				"event":"Connected",
-				"type":"gcode",
-				"command":"M206 X0.0 Y0.0 Z%f" % self_.getFloat(["printerParameters", "zOffset"])
-			}
-		]
+		"subscriptions": []
 	},
 	"api": {
 		"enabled": False,
@@ -165,7 +159,7 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": False,
+			"enabled": True,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
