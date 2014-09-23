@@ -205,7 +205,7 @@ class Printer():
 
 	def home(self, axes):
 		for axis in axes:
-			self.commands(["G91", "G28 %s0" % axis, "G90"])
+			self.commands(["G91", "G28 %s0" % axis.upper(), "G90"])
 
 	def extrude(self, amount):
 		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
