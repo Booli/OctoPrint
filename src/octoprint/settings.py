@@ -159,7 +159,7 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": False,
+			"enabled": True,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
