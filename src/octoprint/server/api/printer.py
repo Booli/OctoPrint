@@ -220,7 +220,7 @@ def printerPrintheadCommand():
 	if response is not None:
 		return response
 
-	valid_axes = ["x", "y", "z"]
+	valid_axes = ["y", "x", "z"]
 	##~~ jog command
 	if command == "jog":
 		# validate all jog instructions, make sure that the values are numbers
@@ -355,4 +355,3 @@ def _getTemperatureData(filter):
 		})
 
 	return filter(tempData)
-

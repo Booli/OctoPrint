@@ -117,9 +117,9 @@ default_settings = {
 			"name": "Xeed",
 			"type": "section",
 			"children": [
-				{"command": "G32", "name": "Level bed", "type": "command"},
-				{"command": "G37", "name": "Quick load", "type": "command"},
-				{"command": "G38", "name": "Quick unload", "type": "command"}
+				{"command": "G32", "name": "Level bed", "type": "command", "confirm": "Do you want to level the bed?"},
+				{"command": "G37", "name": "Quick load", "type": "command", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
+				{"command": "G38", "name": "Quick unload", "type": "command", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
 			]
 		}
 	],
@@ -144,7 +144,7 @@ default_settings = {
 		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
-		"enabled": False,
+		"enabled": True,
 		"subscriptions": []
 	},
 	"api": {
