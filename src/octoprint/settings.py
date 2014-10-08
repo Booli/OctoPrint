@@ -121,7 +121,8 @@ default_settings = {
 		],
 		"bedDimensions": {
 			"x": 300.0, "y": 245.0, "r": 100
-		}
+		},
+		"defaultExtrusionLength": 5
 	},
 	"appearance": {
 		"name": "Xeed",
