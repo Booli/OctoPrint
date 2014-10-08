@@ -158,7 +158,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
-        if (!length) length = 5;
+        if (!length) length = self.settings.printer_defaultExtrusionLength();
 
         var data = {
             command: "extrude",
