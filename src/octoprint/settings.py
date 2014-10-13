@@ -137,36 +137,6 @@ default_settings = {
 				{"command": "G37", "name": "Quick load", "type": "command", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
 				{"command": "G38", "name": "Quick unload", "type": "command", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
 			]
-		},
-		{
-			"name": "Printing Controls",
-			"type": "section",
-			"children": [
-				{
-					"command": "M220 S%(speed)s",
-					"name": "Printer Speed",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "(0-200%)",
-							"parameter": "speed",
-							"default":"100"
-						}
-					]
-				},
-				{
-					"command": "M221 S%(flow)s",
-					"name": "Flow rate",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "(0-200%)",
-							"parameter": "flow",
-							"default":"100"
-						}
-					]
-				}
-			]
 		}
 	],
 	"system": {
