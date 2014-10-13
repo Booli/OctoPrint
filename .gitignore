@@ -4,7 +4,6 @@
 *.pyc
 *.zip
 *.exe
-*.gcode
 *.swp
 darwin-Cura-*
 win32-Cura-*
@@ -24,3 +23,4 @@ pypy
 OctoPrint.egg-info
 *.orig
 
+*.codekit
