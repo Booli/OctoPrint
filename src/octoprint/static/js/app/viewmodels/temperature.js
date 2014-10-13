@@ -19,7 +19,7 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
     self.tools = ko.observableArray([]);
     self.hasBed = ko.observable(true);
     self.bedTemp = self._createToolEntry();
-    self.bedTemp["name"](gettext("Chamber"));
+    self.bedTemp["name"]("Chamber");
     self.bedTemp["key"]("bed");
 
     self.isErrorOrClosed = ko.observable(undefined);
@@ -51,13 +51,13 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 if (tools.length <= extruder || !tools[extruder]) {
                     tools[extruder] = self._createToolEntry();
                 }
-                tools[extruder]["name"](gettext("Tool") + " " + extruder);
+                tools[extruder]["name"]("Tool " + extruder);
                 tools[extruder]["key"]("tool" + extruder);
             }
-            //hack Xeed
-            tools[0]["name"](gettext("Front"));
+            //hack Xeed 
+            tools[0]["name"]("Front");
             tools[0]["key"]("tool" + 0);
-            tools[1]["name"](gettext("Back"));
+            tools[1]["name"]("Back");
             tools[1]["key"]("tool" + 1);
         } else {
             // only one extruder, no need to add numbers
@@ -67,12 +67,12 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
             if (tools.length < 1 || !tools[0]) {
                 tools[0] = self._createToolEntry();
             }
-            tools[0]["name"](gettext("Hotend"));
+            tools[0]["name"]("Hotend");
             tools[0]["key"]("tool0");
         }
 
         // print bed
-        heaterOptions["bed"] = {name: gettext("Chamber"), color: "blue"};
+        heaterOptions["bed"] = {name: "Chamber", color: "blue"};
 
         // write back
         self.heaterOptions(heaterOptions);
@@ -103,9 +103,9 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 // convert to minutes
                 var diffInMins = Math.round(diff / (60 * 1000));
                 if (diffInMins == 0)
-                    return gettext("just now");
+                    return "just now";
                 else
-                    return "- " + diffInMins + " " + gettext("min");
+                    return "- " + diffInMins + " min";
             }
         },
         legend: {
@@ -243,12 +243,12 @@ function TemperatureViewModel(loginStateViewModel, settingsViewModel) {
                 var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1]) : "-";
 
                 data.push({
-                    label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
+                    label: "Actual " + heaterOptions[type].name + ": " + actualTemp,
                     color: heaterOptions[type].color,
                     data: actuals
                 });
                 data.push({
-                    label: gettext("Target") + " " + heaterOptions[type].name + ": " + targetTemp,
+                    label: "Target " + heaterOptions[type].name + ": " + targetTemp,
                     color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
                     data: targets
                 });

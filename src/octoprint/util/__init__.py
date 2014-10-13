@@ -132,7 +132,7 @@ def getDosFilename(input, existingFilenames, extension=None):
 
 
 def findCollisionfreeName(input, extension, existingFilenames):
-	filename = re.sub(r"\s+", "_", input.lower().translate({ord(i):None for i in ".\"/\\[]:;=,"}))
+	filename = re.sub(r"\s+", "_", input.lower().translate(None, ".\"/\\[]:;=,"))
 
 	counter = 1
 	power = 1
@@ -248,36 +248,3 @@ def dict_merge(a, b):
 		else:
 			result[k] = deepcopy(v)
 	return result
-
-
-class Object(object):
-	pass
-
-def interface_addresses(family=None):
-	import netifaces
-	if not family:
-		family = netifaces.AF_INET
-
-	for interface in netifaces.interfaces():
-		try:
-			ifaddresses = netifaces.ifaddresses(interface)
-		except:
-			continue
-		if family in ifaddresses:
-			for ifaddress in ifaddresses[family]:
-				if not ifaddress["addr"].startswith("169.254."):
-					yield ifaddress["addr"]
-
-def address_for_client(host, port):
-	import socket
-
-	for address in interface_addresses():
-		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect((host, port))
-			return address
-		except Exception as e:
-			pass
-
-

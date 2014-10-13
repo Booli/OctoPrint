@@ -63,9 +63,9 @@ function PrinterStateViewModel(loginStateViewModel) {
     });
     self.pauseString = ko.computed(function() {
         if (self.isPaused())
-            return gettext("Continue");
+            return "Continue";
         else
-            return gettext("Pause");
+            return "Pause";
     });
 
     self.timelapseString = ko.computed(function() {
@@ -76,9 +76,9 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var type = timelapse["type"];
         if (type == "zchange") {
-            return gettext("On Z Change");
+            return "On Z Change";
         } else if (type == "timed") {
-            return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
+            return "Timed (" + timelapse["options"]["interval"] + "s)";
         } else {
             return "-";
         }
@@ -104,7 +104,7 @@ function PrinterStateViewModel(loginStateViewModel) {
     };
 
     self._processStateData = function(data) {
-        self.stateString(gettext(data.text));
+        self.stateString(data.text);
         self.isErrorOrClosed(data.flags.closedOrError);
         self.isOperational(data.flags.operational);
         self.isPaused(data.flags.paused);
@@ -130,14 +130,15 @@ function PrinterStateViewModel(loginStateViewModel) {
 
         var result = [];
         if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
-            for (var key in data.filament) {
-                if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
-
-                result.push({
-                    name: ko.observable(gettext("Tool") + " " + key.substr("tool".length)),
+            var i = 0;
+            do {
+                var key = "tool" + i;
+                result[i] = {
+                    name: ko.observable("Tool " + i),
                     data: ko.observable(data.filament[key])
-                });
-            }
+                };
+                i++;
+            } while (data.filament.hasOwnProperty("tool" + i));
         }
         self.filament(result);
     };
@@ -163,7 +164,7 @@ function PrinterStateViewModel(loginStateViewModel) {
         };
 
         if (self.isPaused()) {
-            $("#confirmation_dialog .confirmation_dialog_message").text(gettext("This will restart the print job from the beginning."));
+            $("#confirmation_dialog .confirmation_dialog_message").text("This will restart the print job from the beginning.");
             $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
             $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {e.preventDefault(); $("#confirmation_dialog").modal("hide"); restartCommand(); });
             $("#confirmation_dialog").modal("show");

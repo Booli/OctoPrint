@@ -1,9 +1,8 @@
 # coding=utf-8
-from __future__ import absolute_import
+from octoprint.server.util import getApiKey, getUserForApiKey
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import netaddr
@@ -16,12 +15,8 @@ from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 import octoprint.util as util
 import octoprint.users
 import octoprint.server
-import octoprint.plugin
-from octoprint.server import admin_permission, NO_CONTENT, UI_API_KEY
+from octoprint.server import restricted_access, admin_permission, NO_CONTENT, UI_API_KEY
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import get_api_key, get_user_for_apikey
-from octoprint.server.util.flask import restricted_access
-
 
 #~~ init api blueprint, including sub modules
 
@@ -35,10 +30,9 @@ from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
 from . import log as api_logs
-from . import slicing as api_slicing
 
 
-VERSION = "0.1"
+VERSION = "1.0"
 
 
 def optionsAllowOrigin(request):
@@ -73,7 +67,7 @@ def beforeApiRequests():
 	if request.method == 'OPTIONS' and s().getBoolean(["api", "allowCrossOrigin"]):
 		return optionsAllowOrigin(request)
 
-	apikey = get_api_key(request)
+	apikey = getApiKey(request)
 	if apikey is None:
 		# no api key => 401
 		return make_response("No API key provided", 401)
@@ -90,7 +84,7 @@ def beforeApiRequests():
 		# global api key => continue regular request processing
 		return
 
-	user = get_user_for_apikey(apikey)
+	user = getUserForApiKey(apikey)
 	if user is not None:
 		# user specific api key => continue regular request processing
 		return
@@ -108,44 +102,6 @@ def afterApiRequests(resp):
 
 	return resp
 
-
-#~~ data from plugins
-
-@api.route("/plugin/<string:name>", methods=["GET"])
-def pluginData(name):
-	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
-	if not name in api_plugins:
-		return make_response("Not found", 404)
-
-	api_plugin = api_plugins[name]
-	response = api_plugin.on_api_get(request)
-
-	if response is not None:
-		return response
-	return NO_CONTENT
-
-#~~ commands for plugins
-
-@api.route("/plugin/<string:name>", methods=["POST"])
-@restricted_access
-def pluginCommand(name):
-	api_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SimpleApiPlugin)
-	if not name in api_plugins:
-		return make_response("Not found", 404)
-
-	api_plugin = api_plugins[name]
-	valid_commands = api_plugin.get_api_commands()
-	if valid_commands is None:
-		return make_response("Method not allowed", 405)
-
-	command, data, response = util.getJsonCommandFromRequest(request, valid_commands)
-	if response is not None:
-		return response
-
-	response = api_plugin.on_api_command(command, data)
-	if response is not None:
-		return response
-	return NO_CONTENT
 
 #~~ first run setup
 
@@ -188,14 +144,6 @@ def apiVersion():
 	return jsonify({
 		"server": octoprint.server.VERSION,
 		"api": octoprint.server.api.VERSION
-	})
-
-@api.route("/version", methods=["GET"])
-@restricted_access
-def apiVersion():
-	return jsonify({
-		"server": octoprint.server.VERSION,
-		"api": VERSION
 	})
 
 #~~ system control
@@ -283,9 +231,8 @@ def login():
 @restricted_access
 def logout():
 	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
+	for key in ('identity.id', 'identity.auth_type'):
+		del session[key]
 	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
 	logout_user()
