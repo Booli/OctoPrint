@@ -1,9 +1,8 @@
-function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel) {
+function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel) {
     var self = this;
 
     self.printerState = printerStateViewModel;
     self.loginState = loginStateViewModel;
-    self.slicing = slicingViewModel;
 
     self.isErrorOrClosed = ko.observable(undefined);
     self.isOperational = ko.observable(undefined);
@@ -58,17 +57,11 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
             },
             "local": function(file) {
                 return !(file["origin"] && file["origin"] == "sdcard");
-            },
-            "machinecode": function(file) {
-                return file["type"] && file["type"] == "machinecode";
-            },
-            "model": function(file) {
-                return file["type"] && file["type"] == "model";
             }
         },
         "name",
-        ["machinecode"],
-        [["sd", "local"], ["machinecode", "model"]],
+        [],
+        [["sd", "local"]],
         0
     );
 
@@ -125,9 +118,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
             success: function(response) {
                 self.fromResponse(response, filenameToFocus, locationToFocus);
                 self._otherRequestInProgress = false;
-            },
-            error: function() {
-                self._otherRequestInProgress = false;
             }
         });
     };
@@ -159,7 +149,8 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
         self.highlightFilename(self.printerState.filename());
     };
 
-    self.loadFile = function(file, printAfterLoad) {
+    self.loadFile = function(filename, printAfterLoad) {
+        var file = self.listHelper.getItem(function(item) {return item.name == filename});
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
         $.ajax({
@@ -171,8 +162,16 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
         });
     };
 
-    self.removeFile = function(file) {
+    self.removeFile = function(filename) {
+        var file = self.listHelper.getItem(function(item) {return item.name == filename});
         if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
+
+        var origin;
+        if (file.origin === undefined) {
+            origin = "local";
+        } else {
+            origin = file.origin;
+        }
 
         $.ajax({
             url: file.refs.resource,
@@ -181,12 +180,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
                 self.requestData();
             }
         });
-    };
-
-    self.sliceFile = function(file) {
-        if (!file) return;
-
-        self.slicing.show(file.origin, file.name);
     };
 
     self.initSdCard = function() {
@@ -234,10 +227,6 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
         return data["prints"]["last"]["success"] ? "text-success" : "text-error";
     };
 
-    self.templateFor = function(data) {
-        return "files_template_" + data.type;
-    };
-
     self.getEntryId = function(data) {
         return "gcode_file_" + md5(data["name"] + ":" + data["origin"]);
     };
@@ -281,21 +270,21 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
             if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                 var filament = data["gcodeAnalysis"]["filament"];
                 if (_.keys(filament).length == 1) {
-                    output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-                } else if (_.keys(filament).length > 1) {
-                    for (var toolKey in filament) {
-                        if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
-
-                        output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
-                    }
+                    output += "Filament: " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+                } else {
+                    var i = 0;
+                    do {
+                        output += "Filament (Tool " + i + "): " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + i]) + "<br>";
+                        i++;
+                    } while (filament.hasOwnProperty("tool" + i));
                 }
             }
-            output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+            output += "Estimated Print Time: " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
         }
         if (data["prints"] && data["prints"]["last"]) {
-            output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+            output += "Last Printed: " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
             if (data["prints"]["last"]["lastPrintTime"]) {
-                output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += "Last Print Time: " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
             }
         }
         return output;
@@ -312,26 +301,5 @@ function GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicing
         }
     };
 
-    self.onDataUpdaterReconnect = function() {
-        self.requestData();
-    };
-
-    self.onStartup = function() {
-        self.requestData();
-    };
-
-    self.onUpdatedFiles = function(payload) {
-        if (payload.type == "gcode") {
-            self.requestData();
-        }
-    };
-
-    self.onSlicingDone = function(payload) {
-        self.requestData();
-    };
-
-    self.onMetadataAnalysisFinished = function(payload) {
-        self.requestData();
-    };
 }
 

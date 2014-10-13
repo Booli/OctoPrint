@@ -52,19 +52,6 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         return matcher(self.selectedItem());
     };
 
-    self.removeItem = function(matcher) {
-        var item = self.getItem(matcher, true);
-        if (item === undefined) {
-            return;
-        }
-
-        var index = self.allItems.indexOf(item);
-        if (index > -1) {
-            self.allItems.splice(index, 1);
-            self._updateItems();
-        }
-    };
-
     //~~ pagination
 
     self.paginatedItems = ko.dependentObservable(function() {
@@ -144,13 +131,8 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         }
     };
 
-    self.getItem = function(matcher, all) {
-        var itemList;
-        if (all !== undefined && all === true) {
-            itemList = self.allItems;
-        } else {
-            itemList = self.items();
-        }
+    self.getItem = function(matcher) {
+        var itemList = self.items();
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
                 return itemList[i];
@@ -339,12 +321,12 @@ function formatDuration(seconds) {
     var m = (seconds % 3600) / 60;
     var h = seconds / 3600;
 
-    return _.sprintf(gettext(/* L10N: duration format */ "%(hour)02d:%(minute)02d:%(second)02d"), {hour: h, minute: m, second: s});
+    return _.sprintf("%02d:%02d:%02d", h, m, s);
 }
 
 function formatDate(unixTimestamp) {
     if (!unixTimestamp) return "-";
-    return moment.unix(unixTimestamp).format(gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm"));
+    return moment.unix(unixTimestamp).format("YYYY-MM-DD HH:mm");
 }
 
 function formatTimeAgo(unixTimestamp) {
@@ -354,20 +336,20 @@ function formatTimeAgo(unixTimestamp) {
 
 function formatFilament(filament) {
     if (!filament || !filament["length"]) return "-";
-    var result = "%(length).02fm";
+    var result = _.sprintf("%.02fm", (filament["length"] / 1000));
     if (filament.hasOwnProperty("volume") && filament.volume) {
-        result += " / " + "%(volume).02fcm³";
+        result += " / " + _.sprintf("%.02fcm³", filament["volume"]);
     }
-    return _.sprintf(result, {length: filament["length"] / 1000, volume: filament["volume"]});
+    return result;
 }
 
 function cleanTemperature(temp) {
-    if (!temp || temp < 10) return gettext("off");
+    if (!temp || temp < 10) return "off";
     return temp;
 }
 
 function formatTemperature(temp) {
-    if (!temp || temp < 10) return gettext("off");
+    if (!temp || temp < 10) return "off";
     return _.sprintf("%.1f&deg;C", temp);
 }
 
@@ -376,43 +358,4 @@ function pnotifyAdditionalInfo(inner) {
         + '<div class="pnotify_more"><a href="#" onclick="$(this).children().toggleClass(\'icon-caret-right icon-caret-down\').parent().parent().next().slideToggle(\'fast\')">More <i class="icon-caret-right"></i></a></div>'
         + '<div class="pnotify_more_container hide">' + inner + '</div>'
         + '</div>';
-}
-
-function ping(url, callback) {
-    var img = new Image();
-    var calledBack = false;
-
-    img.onload = function() {
-        callback(true);
-        calledBack = true;
-    };
-    img.onerror = function() {
-        if (!calledBack) {
-            callback(true);
-            calledBack = true;
-        }
-    };
-    img.src = url;
-    setTimeout(function() {
-        if (!calledBack) {
-            callback(false);
-            calledBack = true;
-        }
-    }, 1500);
-}
-
-function showOfflineOverlay(title, message, reconnectCallback) {
-    if (title == undefined) {
-        title = gettext("Server is offline");
-    }
-
-    $("#offline_overlay_title").text(title);
-    $("#offline_overlay_message").html(message);
-    $("#offline_overlay_reconnect").click(reconnectCallback);
-    if (!$("#offline_overlay").is(":visible"))
-        $("#offline_overlay").show();
-}
-
-function hideOfflineOverlay() {
-    $("#offline_overlay").hide();
 }

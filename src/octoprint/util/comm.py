@@ -13,7 +13,6 @@ import threading
 import Queue as queue
 import logging
 import serial
-import octoprint.plugin
 
 from collections import deque
 
@@ -22,8 +21,8 @@ from octoprint.util.avr_isp import ispBase
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.gcodefiles import isGcodeFileName
 from octoprint.util import getExceptionString, getNewTimeout, sanitizeAscii, filterNonAscii
 from octoprint.util.virtual import VirtualPrinter
 
@@ -49,7 +48,6 @@ def serialList():
 			   + glob.glob("/dev/ttyAMA*") \
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
-			   + glob.glob("/dev/cuaU*") \
 			   + glob.glob("/dev/rfcomm*")
 
 	additionalPorts = settings().get(["serial", "additionalPorts"])
@@ -152,10 +150,6 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
-
-		# hooks
-		self._pluginManager = octoprint.plugin.plugin_manager()
-		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
 
 		# SD status data
 		self._sdAvailable = False
@@ -347,11 +341,11 @@ class MachineCom(object):
 	def close(self, isError = False):
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
+			self._serial.close()
 			if isError:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
 				self._changeState(self.STATE_CLOSED)
-			self._serial.close()
 		self._serial = None
 
 		if settings().get(["feature", "sdSupport"]):
@@ -408,7 +402,6 @@ class MachineCom(object):
 			else:
 				self._sendNext()
 		except:
-			self._logger.exception("Error while trying to start printing")
 			self._errorValue = getExceptionString()
 			self._changeState(self.STATE_ERROR)
 			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
@@ -654,23 +647,22 @@ class MachineCom(object):
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = line.strip().lower()
-					fileinfo = preprocessed_line.rsplit(None, 1)
+					fileinfo = line.strip().split(None, 2)
 					if len(fileinfo) > 1:
-						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
+						# we got extended file information here, so let's split filename and size and try to make them a bit nicer
 						filename, size = fileinfo
+						filename = filename.lower()
 						try:
 							size = int(size)
 						except ValueError:
-							# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
-							filename = preprocessed_line
+							# whatever that was, it was not an integer, so we'll just ignore it and set size to None
 							size = None
 					else:
 						# no extended file information, so only the filename is there and we set size to None
-						filename = preprocessed_line
+						filename = fileinfo[0].lower()
 						size = None
 
-					if valid_file_type(filename, "gcode"):
+					if isGcodeFileName(filename):
 						if filterNonAscii(filename):
 							self._logger.warn("Got a file from printer's SD that has a non-ascii filename (%s), that shouldn't happen according to the protocol" % filename)
 						else:
@@ -1096,10 +1088,6 @@ class MachineCom(object):
 				return
 
 			if not self.isStreaming():
-				for hook in self._gcode_hooks:
-					hook_cmd = self._gcode_hooks[hook](self, cmd)
-					if hook_cmd and isinstance(hook_cmd, basestring):
-						cmd = hook_cmd
 				gcode = self._regex_command.search(cmd)
 				if gcode:
 					gcode = gcode.group(1)

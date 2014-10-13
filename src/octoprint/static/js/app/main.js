@@ -1,29 +1,32 @@
 $(function() {
-        //~~ Initialize i18n
-        var catalog = window["BABEL_TO_LOAD_" + LOCALE];
-        if (catalog === undefined) {
-            catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined}
-        }
-        babel.Translations.load(catalog).install();
+        //~~ Initialize view models
+        var loginStateViewModel = new LoginStateViewModel();
+        var usersViewModel = new UsersViewModel(loginStateViewModel);
+        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
+        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
+        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
+        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
+        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
+        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
+        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
+        var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
+        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel);
+        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
+        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
+        var logViewModel = new LogViewModel(loginStateViewModel);
 
-        moment.locale(LOCALE);
-
-        // Dummy translation requests for dynamic strings supplied by the backend
-        var dummyTranslations = [
-            // printer states
-            gettext("Offline"),
-            gettext("Opening serial port"),
-            gettext("Detecting serial port"),
-            gettext("Detecting baudrate"),
-            gettext("Connecting"),
-            gettext("Operational"),
-            gettext("Printing from SD"),
-            gettext("Sending file to SD"),
-            gettext("Printing"),
-            gettext("Paused"),
-            gettext("Closed"),
-            gettext("Transfering file to SD")
-        ];
+        var dataUpdater = new DataUpdater(
+            loginStateViewModel,
+            connectionViewModel, 
+            printerStateViewModel, 
+            temperatureViewModel, 
+            controlViewModel,
+            terminalViewModel,
+            gcodeFilesViewModel,
+            timelapseViewModel,
+            gcodeViewModel,
+            logViewModel
+        );
 
         PNotify.prototype.options.styling = "bootstrap2";
 
@@ -40,89 +43,14 @@ $(function() {
         });
 
         //~~ Show settings - to ensure centered
-        var settingsDialog = $('#settings_dialog');
-        settingsDialog.on('show', function() {
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onSettingsShown")) {
-                    viewModel.onSettingsShown();
-                }
-            });
-        });
-        settingsDialog.on('hidden', function() {
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onSettingsHidden")) {
-                    viewModel.onSettingsHidden();
-                }
-            });
-        });
         $('#navbar_show_settings').click(function() {
-            settingsDialog.modal()
-                .css({
-                    width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
-                });
-
+            $('#settings_dialog').modal()
+                 .css({
+                     width: 'auto',
+                     'margin-left': function() { return -($(this).width() /2); }
+                  });
             return false;
         });
-
-        //~~ Initialize view models
-        var loginStateViewModel = new LoginStateViewModel();
-        var usersViewModel = new UsersViewModel(loginStateViewModel);
-        var settingsViewModel = new SettingsViewModel(loginStateViewModel, usersViewModel);
-        var connectionViewModel = new ConnectionViewModel(loginStateViewModel, settingsViewModel);
-        var timelapseViewModel = new TimelapseViewModel(loginStateViewModel);
-        var printerStateViewModel = new PrinterStateViewModel(loginStateViewModel, timelapseViewModel);
-        var appearanceViewModel = new AppearanceViewModel(settingsViewModel);
-        var temperatureViewModel = new TemperatureViewModel(loginStateViewModel, settingsViewModel);
-        var controlViewModel = new ControlViewModel(loginStateViewModel, settingsViewModel);
-        var terminalViewModel = new TerminalViewModel(loginStateViewModel, settingsViewModel);
-        var slicingViewModel = new SlicingViewModel(loginStateViewModel);
-        var gcodeFilesViewModel = new GcodeFilesViewModel(printerStateViewModel, loginStateViewModel, slicingViewModel);
-        var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
-        var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
-        var logViewModel = new LogViewModel(loginStateViewModel);
-
-        var viewModelMap = {
-            loginStateViewModel: loginStateViewModel,
-            usersViewModel: usersViewModel,
-            settingsViewModel: settingsViewModel,
-            connectionViewModel: connectionViewModel,
-            timelapseViewModel: timelapseViewModel,
-            printerStateViewModel: printerStateViewModel,
-            appearanceViewModel: appearanceViewModel,
-            temperatureViewModel: temperatureViewModel,
-            controlViewModel: controlViewModel,
-            terminalViewModel: terminalViewModel,
-            gcodeFilesViewModel: gcodeFilesViewModel,
-            gcodeViewModel: gcodeViewModel,
-            navigationViewModel: navigationViewModel,
-            logViewModel: logViewModel,
-            slicingViewModel: slicingViewModel
-        };
-
-        var allViewModels = _.values(viewModelMap);
-
-        var additionalViewModels = [];
-        _.each(ADDITIONAL_VIEWMODELS, function(viewModel) {
-            var viewModelClass = viewModel[0];
-            var viewModelParameters = viewModel[1];
-            var viewModelBindTarget = viewModel[2];
-
-            var constructorParameters = [];
-            _.each(viewModelParameters, function(parameter) {
-                if (_.has(viewModelMap, parameter)) {
-                    constructorParameters.push(viewModelMap[parameter]);
-                } else {
-                    constructorParameters.push(undefined);
-                }
-            });
-
-            var viewModelInstance = new viewModelClass(constructorParameters);
-            additionalViewModels.push([viewModelInstance, viewModelBindTarget]);
-            allViewModels.push(viewModelInstance);
-        });
-
-        var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ Temperature
 
@@ -156,10 +84,6 @@ $(function() {
             }
             gcodeFilesViewModel.requestData(filename, location);
 
-            if (_.endsWith(filename.toLowerCase(), ".stl")) {
-                slicingViewModel.show(location, filename);
-            }
-
             if (data.result.done) {
                 $("#gcode_upload_progress .bar").css("width", "0%");
                 $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
@@ -168,7 +92,7 @@ $(function() {
         }
 
         function gcode_upload_fail(e, data) {
-            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.") + "</p>";
+            var error = "<p>Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\" and slicing support is enabled and configured.</p>";
             error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
             new PNotify({
                 title: "Upload failed",
@@ -184,10 +108,10 @@ $(function() {
         function gcode_upload_progress(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             $("#gcode_upload_progress .bar").css("width", progress + "%");
-            $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
+            $("#gcode_upload_progress .bar").text("Uploading ...");
             if (progress >= 100) {
                 $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
+                $("#gcode_upload_progress .bar").text("Saving ...");
             }
         }
 
@@ -298,7 +222,7 @@ $(function() {
 
             var foundLocal = false;
             var foundSd = false;
-            var found = false;
+            var found = false
             var node = e.target;
             do {
                 if (dropZoneLocal && node === dropZoneLocal[0]) {
@@ -336,6 +260,9 @@ $(function() {
                 if (dropZone) dropZoneBackground.removeClass("hover");
             }, 100);
         });
+
+        //~~ Offline overlay
+        $("#offline_overlay_reconnect").click(function() {dataUpdater.reconnect()});
 
         //~~ Underscore setup
 
@@ -378,64 +305,37 @@ $(function() {
             }
         };
 
-        ko.bindingHandlers.invisible = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                if (!valueAccessor()) return;
-                ko.bindingHandlers.style.update(element, function() {
-                    return { visibility: 'hidden' };
-                })
-            }
-        };
+        ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
+        ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
+        ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
+        ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
+        ko.applyBindings(controlViewModel, document.getElementById("control"));
+        ko.applyBindings(terminalViewModel, document.getElementById("term"));
+        var gcode = document.getElementById("gcode");
+        if (gcode) {
+            gcodeViewModel.initialize();
+            ko.applyBindings(gcodeViewModel, gcode);
+        }
+        ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
+        ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
+        ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
+        ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
+        ko.applyBindings(logViewModel, document.getElementById("logs"));
 
-        settingsViewModel.requestData(function() {
-            ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-
-            ko.applyBindings(connectionViewModel, document.getElementById("connection_accordion"));
-            ko.applyBindings(printerStateViewModel, document.getElementById("state_accordion"));
-            ko.applyBindings(gcodeFilesViewModel, document.getElementById("files_accordion"));
-            ko.applyBindings(temperatureViewModel, document.getElementById("temp"));
-            ko.applyBindings(controlViewModel, document.getElementById("control"));
-            ko.applyBindings(terminalViewModel, document.getElementById("term"));
-            var gcode = document.getElementById("gcode");
-            if (gcode) {
-                gcodeViewModel.initialize();
-                ko.applyBindings(gcodeViewModel, gcode);
-            }
-            //ko.applyBindings(settingsViewModel, document.getElementById("settings_dialog"));
-            ko.applyBindings(navigationViewModel, document.getElementById("navbar"));
-            ko.applyBindings(appearanceViewModel, document.getElementsByTagName("head")[0]);
-            ko.applyBindings(printerStateViewModel, document.getElementById("drop_overlay"));
-            ko.applyBindings(logViewModel, document.getElementById("logs"));
-
-            var timelapseElement = document.getElementById("timelapse");
-            if (timelapseElement) {
-                ko.applyBindings(timelapseViewModel, timelapseElement);
-            }
-
-            ko.applyBindings(slicingViewModel, document.getElementById("slicing_configuration_dialog"));
-
-            // apply bindings and signal startup
-            _.each(additionalViewModels, function(additionalViewModel) {
-                if (additionalViewModel[0].hasOwnProperty("onBeforeBinding")) {
-                    additionalViewModel[0].onBeforeBinding();
-                }
-
-                // model instance, target container
-                ko.applyBindings(additionalViewModel[0], additionalViewModel[1]);
-
-                if (additionalViewModel[0].hasOwnProperty("onAfterBinding")) {
-                    additionalViewModel[0].onAfterBinding();
-                }
-            });
-        });
+        var timelapseElement = document.getElementById("timelapse");
+        if (timelapseElement) {
+            ko.applyBindings(timelapseViewModel, timelapseElement);
+        }
 
         //~~ startup commands
 
-        _.each(allViewModels, function(viewModel) {
-            if (viewModel.hasOwnProperty("onStartup")) {
-                viewModel.onStartup();
-            }
-        });
+        loginStateViewModel.requestData();
+        connectionViewModel.requestData();
+        controlViewModel.requestData();
+        gcodeFilesViewModel.requestData();
+        timelapseViewModel.requestData();
+        settingsViewModel.requestData();
+        logViewModel.requestData();
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
@@ -461,15 +361,7 @@ $(function() {
                 var webcamImage = $("#webcam_image");
                 var currentSrc = webcamImage.attr("src");
                 if (currentSrc === undefined || currentSrc.trim() == "") {
-                    var newSrc = CONFIG_WEBCAM_STREAM;
-                    if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
-                        newSrc += "&";
-                    } else {
-                        newSrc += "?";
-                    }
-                    newSrc += new Date().getTime();
-
-                    webcamImage.attr("src", newSrc);
+                    webcamImage.attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
                 }
             } else if (previous.hash == "#control") {
                 // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
