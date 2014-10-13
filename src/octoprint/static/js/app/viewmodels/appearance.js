@@ -6,15 +6,15 @@ function AppearanceViewModel(settingsViewModel) {
 
     self.brand = ko.computed(function() {
         if (self.name())
-            return "LilyPrint: " + self.name();
+            return gettext("LilyPrint") + ": " + self.name();
         else
-            return "LilyPrint";
-    })
+            return gettext("LilyPrint");
+    });
 
     self.title = ko.computed(function() {
         if (self.name())
-            return self.name() + " [LilyPrint]";
+            return self.name() + " [" + gettext("LilyPrint") + "]";
         else
-            return "LilyPrint";
-    })
+            return gettext("LilyPrint");
+    });
 }
