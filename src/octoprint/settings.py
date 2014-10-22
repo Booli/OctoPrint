@@ -125,12 +125,12 @@ default_settings = {
 		"config": "/default/path/to/your/cura/config.ini"
 	},
 	"events": {
-		"enabled": False,
+		"enabled": True,
 		"subscriptions": []
 	},
 	"api": {
-		"enabled": False,
-		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		"enabled": True,
+		"key": None
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
@@ -171,11 +171,18 @@ class Settings(object):
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
 		self.load(migrate=True)
 
+		if self.get(["api", "key"]) is None:
+			self.set(["api", "key"], ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes))
+			self.save(force=True)
+
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
 			self.settings_dir = basedir
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
+
+		if not os.path.isdir(self.settings_dir):
+			os.makedirs(self.settings_dir)
 
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]

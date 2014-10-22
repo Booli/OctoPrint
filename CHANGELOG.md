@@ -2,9 +2,17 @@
 
 ## 1.1.1 (Unreleased)
 
+### Improvements
+
+* The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
+  server start and written back into ``config.yaml``
+* Event subscriptions are now enabled by default (it was an accident that they weren't)
+
 ### Bug Fixes
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+* [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
+* [IRC] Also allow downloading .g files via Tornado
 
 ## 1.1.0 (2014-09-03)
 
