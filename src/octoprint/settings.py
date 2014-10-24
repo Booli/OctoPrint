@@ -40,9 +40,19 @@ default_settings = {
 	"server": {
 		"host": "0.0.0.0",
 		"port": 5000,
-		"firstRun": False,
-		"baseUrl": "",
-		"scheme": ""
+		"firstRun": True,
+		"reverseProxy": {
+			"prefixHeader": "X-Script-Name",
+			"schemeHeader": "X-Scheme",
+			"prefixFallback": "",
+			"schemeFallback": ""
+		},
+		"uploads": {
+			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
+			"nameSuffix": "name",
+			"pathSuffix": "path"
+		},
+		"maxSize": 100 * 1024, # 100 KB
 	},
 	"webcam": {
 		"stream": None,
@@ -63,6 +73,9 @@ default_settings = {
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
+	"gcodeAnalysis": {
+		"maxExtruders": 10
+	},
 	"feature": {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
@@ -78,7 +91,9 @@ default_settings = {
 		"timelapse_tmp": None,
 		"logs": None,
 		"virtualSd": None,
-		"watched": None
+		"watched": None,
+		"plugins": None,
+		"slicingProfiles": None
 	},
 	"temperature": {
 		"profiles":
@@ -106,7 +121,8 @@ default_settings = {
 		],
 		"bedDimensions": {
 			"x": 300.0, "y": 245.0, "r": 100
-		}
+		},
+		"defaultExtrusionLength": 5
 	},
 	"appearance": {
 		"name": "Xeed",
@@ -121,6 +137,36 @@ default_settings = {
 				{"command": "G37", "name": "Quick load", "type": "command", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
 				{"command": "G38", "name": "Quick unload", "type": "command", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
 			]
+		},
+		{
+			"name": "Printing Controls",
+			"type": "section",
+			"children": [
+				{
+					"command": "M220 S%(speed)s",
+					"name": "Printer Speed",
+					"type": "parametric_command",
+					"input": [
+						{
+							"name": "(0-200%)",
+							"parameter": "speed",
+							"default":"100"
+						}
+					]
+				},
+				{
+					"command": "M221 S%(flow)s",
+					"name": "Flow rate",
+					"type": "parametric_command",
+					"input": [
+						{
+							"name": "(0-200%)",
+							"parameter": "flow",
+							"default":"100"
+						}
+					]
+				}
+			]
 		}
 	],
 	"system": {
@@ -131,31 +177,37 @@ default_settings = {
 		]
 	},
 	"accessControl": {
-		"enabled": False,
+		"enabled": True,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
-		"autologinLocal": False,
+		"autologinLocal": True,
 		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": None
+		"autologinAs": "lily"
 	},
 	"cura": {
 		"enabled": False,
 		"path": "/default/path/to/cura",
 		"config": "/default/path/to/your/cura/config.ini"
 	},
+	"slicing": {
+		"enabled": True,
+		"defaultSlicer": "cura",
+		"defaultProfiles": None
+	},
 	"events": {
 		"enabled": True,
 		"subscriptions": []
 	},
 	"api": {
-		"enabled": False,
-		"key": ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes),
+		"enabled": True,
+		"key": None,
 		"allowCrossOrigin": False
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
+	"plugins": {},
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
@@ -192,6 +244,10 @@ class Settings(object):
 			self._configfile = os.path.join(self.settings_dir, "config.yaml")
 		self.load(migrate=True)
 
+		if self.get(["api", "key"]) is None:
+			self.set(["api", "key"], ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes))
+			self.save(force=True)
+
 	def _init_settings_dir(self, basedir):
 		if basedir is not None:
 			self.settings_dir = basedir
@@ -210,7 +266,7 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
-		# chamged from else to handle cases where the file exists, but is empty / 0 bytes
+		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
 
@@ -305,6 +361,116 @@ class Settings(object):
 			self.save(force=True)
 			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
 
+	def _migrate_reverse_proxy_config(self):
+		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
+			prefix = ""
+			if "baseUrl" in self._config["server"]:
+				prefix = self._config["server"]["baseUrl"]
+				del self._config["server"]["baseUrl"]
+
+			scheme = ""
+			if "scheme" in self._config["server"]:
+				scheme = self._config["server"]["scheme"]
+				del self._config["server"]["scheme"]
+
+			if not "reverseProxy" in self._config["server"] or not isinstance(self._config["server"]["reverseProxy"], dict):
+				self._config["server"]["reverseProxy"] = dict()
+			if prefix:
+				self._config["server"]["reverseProxy"]["prefixFallback"] = prefix
+			if scheme:
+				self._config["server"]["reverseProxy"]["schemeFallback"] = scheme
+			self._logger.info("Migrated reverse proxy configuration to new structure")
+			return True
+		else:
+			return False
+
+	def _migrate_event_config(self):
+		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
+			self._logger.info("Migrating config (event subscriptions)...")
+
+			# migrate event hooks to new format
+			placeholderRe = re.compile("%\((.*?)\)s")
+
+			eventNameReplacements = {
+				"ClientOpen": "ClientOpened",
+				"TransferStart": "TransferStarted"
+			}
+			payloadDataReplacements = {
+				"Upload": {"data": "{file}", "filename": "{file}"},
+				"Connected": {"data": "{port} at {baudrate} baud"},
+				"FileSelected": {"data": "{file}", "filename": "{file}"},
+				"TransferStarted": {"data": "{remote}", "filename": "{remote}"},
+				"TransferDone": {"data": "{remote}", "filename": "{remote}"},
+				"ZChange": {"data": "{new}"},
+				"CaptureStart": {"data": "{file}"},
+				"CaptureDone": {"data": "{file}"},
+				"MovieDone": {"data": "{movie}", "filename": "{gcode}"},
+				"Error": {"data": "{error}"},
+				"PrintStarted": {"data": "{file}", "filename": "{file}"},
+				"PrintDone": {"data": "{file}", "filename": "{file}"},
+			}
+
+			def migrateEventHook(event, command):
+				# migrate placeholders
+				command = placeholderRe.sub("{__\\1}", command)
+
+				# migrate event names
+				if event in eventNameReplacements:
+					event = eventNameReplacements["event"]
+
+				# migrate payloads to more specific placeholders
+				if event in payloadDataReplacements:
+					for key in payloadDataReplacements[event]:
+						command = command.replace("{__%s}" % key, payloadDataReplacements[event][key])
+
+				# return processed tuple
+				return event, command
+
+			disableSystemCommands = False
+			if "systemCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["systemCommandTrigger"]:
+				disableSystemCommands = not self._config["events"]["systemCommandTrigger"]["enabled"]
+
+			disableGcodeCommands = False
+			if "gcodeCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["gcodeCommandTrigger"]:
+				disableGcodeCommands = not self._config["events"]["gcodeCommandTrigger"]["enabled"]
+
+			disableAllCommands = disableSystemCommands and disableGcodeCommands
+			newEvents = {
+				"enabled": not disableAllCommands,
+				"subscriptions": []
+			}
+
+			if "systemCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["systemCommandTrigger"]:
+				for trigger in self._config["events"]["systemCommandTrigger"]["subscriptions"]:
+					if not ("event" in trigger and "command" in trigger):
+						continue
+
+					newTrigger = {"type": "system"}
+					if disableSystemCommands and not disableAllCommands:
+						newTrigger["enabled"] = False
+
+					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
+					newEvents["subscriptions"].append(newTrigger)
+
+			if "gcodeCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["gcodeCommandTrigger"]:
+				for trigger in self._config["events"]["gcodeCommandTrigger"]["subscriptions"]:
+					if not ("event" in trigger and "command" in trigger):
+						continue
+
+					newTrigger = {"type": "gcode"}
+					if disableGcodeCommands and not disableAllCommands:
+						newTrigger["enabled"] = False
+
+					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
+					newTrigger["command"] = newTrigger["command"].split(",")
+					newEvents["subscriptions"].append(newTrigger)
+
+			self._config["events"] = newEvents
+			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
+			return True
+		else:
+			return False
+
 	def save(self, force=False):
 		if not self._dirty and not force:
 			return
@@ -316,12 +482,13 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False):
+	def get(self, path, asdict=False, defaults=None):
 		if len(path) == 0:
 			return None
 
 		config = self._config
-		defaults = default_settings
+		if defaults is None:
+			defaults = default_settings
 
 		while len(path) > 1:
 			key = path.pop(0)
@@ -365,8 +532,8 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path):
-		value = self.get(path)
+	def getInt(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 
@@ -376,8 +543,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path):
-		value = self.get(path)
+	def getFloat(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 
@@ -387,13 +554,17 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path):
-		value = self.get(path)
+	def getBoolean(self, path, defaults=None):
+		value = self.get(path, defaults=defaults)
 		if value is None:
 			return None
 		if isinstance(value, bool):
 			return value
-		return value.lower() in valid_boolean_trues
+		if isinstance(value, (int, float)):
+			return value != 0
+		if isinstance(value, (str, unicode)):
+			return value.lower() in valid_boolean_trues
+		return value is not None
 
 	def getBaseFolder(self, type):
 		if type not in default_settings["folder"].keys():
@@ -458,12 +629,13 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False):
+	def set(self, path, value, force=False, defaults=None):
 		if len(path) == 0:
 			return
 
 		config = self._config
-		defaults = default_settings
+		if defaults is None:
+			defaults = default_settings
 
 		while len(path) > 1:
 			key = path.pop(0)
@@ -488,9 +660,9 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, force=False):
+	def setInt(self, path, value, force=False, defaults=None):
 		if value is None:
-			self.set(path, None, force)
+			self.set(path, None, force=force, defaults=defaults)
 			return
 
 		try:
@@ -501,9 +673,9 @@ class Settings(object):
 
 		self.set(path, intValue, force)
 
-	def setFloat(self, path, value, force=False):
+	def setFloat(self, path, value, force=False, defaults=None):
 		if value is None:
-			self.set(path, None, force)
+			self.set(path, None, force=force, defaults=defaults)
 			return
 
 		try:
@@ -514,13 +686,13 @@ class Settings(object):
 
 		self.set(path, floatValue, force)
 
-	def setBoolean(self, path, value, force=False):
+	def setBoolean(self, path, value, force=False, defaults=None):
 		if value is None or isinstance(value, bool):
-			self.set(path, value, force)
+			self.set(path, value, force=force, defaults=defaults)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, force)
+			self.set(path, True, force=force, defaults=defaults)
 		else:
-			self.set(path, False, force)
+			self.set(path, False, force=force, defaults=defaults)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():
