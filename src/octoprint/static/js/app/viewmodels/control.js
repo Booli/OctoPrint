@@ -20,6 +20,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self.isLoading = ko.observable(undefined);
 
     self.extrusionAmount = ko.observable(undefined);
+    self.calibrationZOffset = ko.observable(undefined);
     self.controls = ko.observableArray([]);
 
     self.tools = ko.observableArray([]);
@@ -259,6 +260,16 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             default:
                 return "customControls_emptyTemplate";
         }
+    };
+
+    self.startZOffset = function() {
+        $("#zOffset_dialog").modal("show");
+            var old_zOffset = self.settings.printer_zOffset();
+            var calibrationZ = old_z0ffset - 0.5;
+
+            self.sendHomeCommand(z);
+            self.sendJogCommand(z, 1, calibrationZ);
+        
     };
 
     self.onStartup = function() {

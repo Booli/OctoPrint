@@ -411,7 +411,7 @@ input[type="submit"].btn.btn-mini {
   box-sizing: border-box;
 }
 body {
-  padding-top: 60px;
+  /* padding-top: 60px; */
 }
 #navbar .navbar-inner {
   background-color: #ebebeb;
