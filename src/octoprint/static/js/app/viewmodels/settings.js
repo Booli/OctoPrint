@@ -383,4 +383,9 @@ function SettingsViewModel(loginStateViewModel, usersViewModel) {
         });
     };
 
+    self.onSettingsShown = function() {
+      self.requestData();
+    };
+
+
 }
