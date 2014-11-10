@@ -65,6 +65,12 @@ $(function() {
             return false;
         });
 
+        //~~ Load config on shown dialog
+        var zOffsetDialog = $('#zOffset_dialog');
+        zOffsetDialog.on('show', function() {
+            zOffsetViewModel.onDialogShown();
+        });
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -81,7 +87,7 @@ $(function() {
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
-        var zOffsetViewModel = new ZOffsetViewModel(settingsViewModel, controlViewModel);
+        var zOffsetViewModel = new ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewModel);
 
         var viewModelMap = {
             loginStateViewModel: loginStateViewModel,
