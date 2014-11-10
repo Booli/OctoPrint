@@ -261,6 +261,10 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         }
     };
 
+    self.startZOffset = function() {
+        $("#zOffset_dialog").modal("show");
+    };
+
     self.onStartup = function() {
         self.requestData();
     };

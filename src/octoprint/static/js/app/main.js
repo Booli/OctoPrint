@@ -65,6 +65,12 @@ $(function() {
             return false;
         });
 
+        //~~ Load config on shown dialog
+        var zOffsetDialog = $('#zOffset_dialog');
+        zOffsetDialog.on('show', function() {
+            zOffsetViewModel.onDialogShown();
+        });
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var usersViewModel = new UsersViewModel(loginStateViewModel);
@@ -81,6 +87,7 @@ $(function() {
         var gcodeViewModel = new GcodeViewModel(loginStateViewModel, settingsViewModel);
         var navigationViewModel = new NavigationViewModel(loginStateViewModel, appearanceViewModel, settingsViewModel, usersViewModel);
         var logViewModel = new LogViewModel(loginStateViewModel);
+        var zOffsetViewModel = new ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewModel);
 
         var viewModelMap = {
             loginStateViewModel: loginStateViewModel,
@@ -97,7 +104,8 @@ $(function() {
             gcodeViewModel: gcodeViewModel,
             navigationViewModel: navigationViewModel,
             logViewModel: logViewModel,
-            slicingViewModel: slicingViewModel
+            slicingViewModel: slicingViewModel,
+            zOffsetViewModel: zOffsetViewModel
         };
 
         var allViewModels = _.values(viewModelMap);
@@ -413,6 +421,7 @@ $(function() {
             }
 
             ko.applyBindings(slicingViewModel, document.getElementById("slicing_configuration_dialog"));
+            ko.applyBindings(zOffsetViewModel, document.getElementById("zOffset_dialog"));
 
             // apply bindings and signal startup
             _.each(additionalViewModels, function(additionalViewModel) {
@@ -524,4 +533,3 @@ $(function() {
 
     }
 );
-
