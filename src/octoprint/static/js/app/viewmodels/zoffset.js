@@ -10,14 +10,14 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
 
     self.onDialogShown = function() {
         self.settings.requestData();
-        self.calibration_zOffset(self.settings.printer_zOffset());
+        self.calibration_zOffset((self.settings.printer_zOffset()*1000 - 1000*1)/1000);
         self.startedCalibration(false);
     };
 
 
     self.increaseZ = function(distance) {
         self.control.sendJogCommand('z', 1, distance);
-        self.calibration_zOffset((self.calibration_zOffset()*1000 + distance*1000)/1000);  
+        self.calibration_zOffset((self.calibration_zOffset()*1000 + distance*1000)/1000);
 
     };
 
@@ -31,10 +31,7 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
         self.control.sendHomeCommand('z');
         self.startedCalibration(true);
 
-        var old_zOffset = self.calibration_zOffset();
-        var calibration_z = old_zOffset - 1;
-
-        self.control.sendJogCommand('z', 1, calibration_z);
+        self.control.sendJogCommand('z', 1, self.calibration_zOffset());
     };
 
     self.saveCalibration = function() {

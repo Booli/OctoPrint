@@ -224,7 +224,7 @@ def printerPrintheadCommand():
 	if response is not None:
 		return response
 
-	valid_axes = ["y", "x", "z"]
+	valid_axes = ["x", "y", "z"]
 	##~~ jog command
 	if command == "jog":
 		# validate all jog instructions, make sure that the values are numbers
