@@ -107,7 +107,7 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-success confirmation_dialog_acknowledge" data-bind ="click: function() {saveCalibration()}">{{ _('Save') }}</a>
+        <button class="btn btn-success confirmation_dialog_acknowledge" data-bind="enable: startedCalibration(), click: function() {saveCalibration()}">{{ _('Save') }}</button>
     </div>
 </div>
 
