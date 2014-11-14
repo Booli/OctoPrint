@@ -10,7 +10,7 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
 
     self.onDialogShown = function() {
         self.settings.requestData();
-        self.calibration_zOffset(self.settings.printer_zOffset() -1);
+        self.calibration_zOffset((self.settings.printer_zOffset()*1000 - 1000*1)/1000);
         self.startedCalibration(false);
     };
 
