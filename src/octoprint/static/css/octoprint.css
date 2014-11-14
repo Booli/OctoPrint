@@ -1117,6 +1117,8 @@ ul.dropdown-menu li a {
 }
 #control .control-box {
   display: block;
+  padding-left: 3px;
+  padding-right: 3px;
   height: 60px;
   margin-bottom: 10px;
   font-size: 1.2em;
@@ -1174,6 +1176,23 @@ ul.dropdown-menu li a {
 .footer ul li a {
   color: #555;
 }
+
+/** z-Offset dialog */
+#zOffset_dialog .box {
+  width: 60px;
+  height: 60px;
+  margin-left: 10px;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+#zOffset_dialog .control-box {
+  display: block;
+  height: 60px;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+
 /** Notifications */
 .ui-pnotify .alert a {
   color: #c09853;
