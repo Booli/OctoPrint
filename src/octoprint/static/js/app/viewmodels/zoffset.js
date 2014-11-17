@@ -28,6 +28,7 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
     };
 
     self.startZcalibration = function() {
+        self.control.sendHomeCommand('x');  
         self.control.sendHomeCommand('z');
         self.startedCalibration(true);
 
