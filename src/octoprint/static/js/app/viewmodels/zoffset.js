@@ -27,12 +27,26 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
 
     };
 
-    self.startZcalibration = function() {
-        self.control.sendHomeCommand('x');  
-        self.control.sendHomeCommand('z');
-        self.startedCalibration(true);
+    self.startZCalibration = function() {
 
-        self.control.sendJogCommand('z', 1, self.calibration_zOffset());
+      var commands = [
+        "G91",
+        "G28 X0",
+        "G28 Z0",
+        "G1 Z-" + self.calibration_zOffset() +" F200",
+        "G90"
+      ];
+
+      $.ajax({
+        url: API_BASEURL + "printer/command",
+        type: "POST",
+        dataType: "json",
+        contentType: "application/json; charset=UTF-8",
+        data: JSON.stringify({"commands": commands}),
+        success: function() {
+          self.startedCalibration(true);
+        }
+      });
     };
 
     self.saveCalibration = function() {

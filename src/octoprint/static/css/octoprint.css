@@ -1107,6 +1107,9 @@ ul.dropdown-menu li a {
 #control .jog-panel > div.distance {
   text-align: left;
 }
+#control form {
+  margin: 0 0 10px;
+}
 #control .box {
   width: 60px;
   height: 60px;
