@@ -134,8 +134,8 @@ default_settings = {
 			"type": "section",
 			"children": [
 				{"type": "command", "command": "G32", "name": "Level bed", "confirm": "Do you want to level the bed?"},
-				{"type": "commands", "commands": ["G91", "G1 E1200 F3000", "G1 E350 F600", "G90"], "name": "Quick load", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
-				{"type": "commands", "commands": ["G91", "G1 E-1500 F3000", "G90"], "name": "Quick unload", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
+				{"type": "commands", "commands": ["G91", "G1 E1200 F3000", "G1 E350 F300", "G90"], "name": "Quick load", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
+				{"type": "commands", "commands": ["G91", "G1 E-1200 F3000", "G1 E-300 F3000", "G90"], "name": "Quick unload", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
 			]
 		},
 		{
