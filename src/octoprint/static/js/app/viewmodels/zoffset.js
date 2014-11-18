@@ -32,7 +32,7 @@ function ZOffsetViewModel(settingsViewModel, controlViewModel, loginStateViewMod
       var commands = [
         "G28 X0",
         "G28 Y0",
-        "G1 Y110",
+        "G1 Y100 F6000",
         "G28 Z0",
         "G91",
         "G1 Z-" + self.calibration_zOffset() +" F200",
