@@ -133,9 +133,39 @@ default_settings = {
 			"name": "Xeed",
 			"type": "section",
 			"children": [
-				{"command": "G32", "name": "Level bed", "type": "command", "confirm": "Do you want to level the bed?"},
-				{"command": "G37", "name": "Quick load", "type": "command", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
-				{"command": "G38", "name": "Quick unload", "type": "command", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
+				{"type": "command", "command": "G32", "name": "Level bed", "confirm": "Do you want to level the bed?"},
+				{"type": "commands", "commands": ["G91", "G1 E1200 F3000", "G1 E350 F600", "G90"], "name": "Quick load", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
+				{"type": "commands", "commands": ["G91", "G1 E-1500 F3000", "G90"], "name": "Quick unload", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
+			]
+		},
+		{
+			"name": "Printing Controls",
+			"type": "section",
+			"children": [
+				{
+					"command": "M220 S%(speed)s",
+					"name": "Printer Speed",
+					"type": "parametric_command",
+					"input": [
+						{
+							"name": "%",
+							"parameter": "speed",
+							"default":"100"
+						}
+					]
+				},
+				{
+					"command": "M221 S%(flow)s",
+					"name": "Flow rate",
+					"type": "parametric_command",
+					"input": [
+						{
+							"name": "%",
+							"parameter": "flow",
+							"default":"100"
+						}
+					]
+				}
 			]
 		}
 	],
@@ -181,7 +211,7 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": False,
+			"enabled": True,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
