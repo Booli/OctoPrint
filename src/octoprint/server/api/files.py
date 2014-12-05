@@ -301,13 +301,19 @@ def gcodeFileCommand(filename, target):
 			del data["slicer"]
 			if not slicer in slicingManager.registered_slicers:
 				return make_response("Slicer {slicer} is not available".format(**locals()), 400)
+			slicer_instance = slicingManager.get_slicer(slicer)
 		elif "cura" in slicingManager.registered_slicers:
 			slicer = "cura"
+			slicer_instance = slicingManager.get_slicer("cura")
 		else:
 			return make_response("Cannot slice {filename}, no slicer available".format(**locals()), 415)
 
 		if not octoprint.filemanager.valid_file_type(filename, type="stl"):
 			return make_response("Cannot slice {filename}, not an STL file".format(**locals()), 415)
+
+		if slicer_instance.get_slicer_properties()["same_device"] and (printer.isPrinting() or printer.isPaused()):
+			# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
+			return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
 
 		if "gcode" in data.keys() and data["gcode"]:
 			gcode_name = data["gcode"]
@@ -317,18 +323,35 @@ def gcodeFileCommand(filename, target):
 			name, _ = os.path.splitext(filename)
 			gcode_name = name + ".gco"
 
+		# prohibit overwriting the file that is currently being printed
+		currentOrigin, currentFilename = _getCurrentFile()
+		if currentFilename == gcode_name and currentOrigin == target and (printer.isPrinting() or printer.isPaused()):
+			make_response("Trying to slice into file that is currently being printed: %s" % gcode_name, 409)
+
 		if "profile" in data.keys() and data["profile"]:
 			profile = data["profile"]
 			del data["profile"]
 		else:
 			profile = None
 
+		if "printerProfile" in data.keys() and data["printerProfile"]:
+			printerProfile = data["printerProfile"]
+			del data["printerProfile"]
+		else:
+			printerProfile = None
+
+		if "position" in data.keys() and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
+			position = data["position"]
+			del data["position"]
+		else:
+			position = None
+
 		override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
 		overrides = dict()
 		for key in override_keys:
 			overrides[key[len("profile."):]] = data[key]
 
-		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name, profile=profile, overrides=overrides)
+		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name, profile=profile, printer_profile_id=printerProfile, position=position, overrides=overrides)
 		if ok:
 			files = {}
 			location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)
@@ -359,16 +382,13 @@ def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename):
 		return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-	currentJob = printer.getCurrentJob()
-	currentFilename = None
-	currentOrigin = None
-	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
-		currentFilename = currentJob["file"]["name"]
-		currentOrigin = currentJob["file"]["origin"]
-
-	# prohibit deleting the file that is currently being printed
+	# prohibit deleting files that are currently in use
+	currentOrigin, currentFilename = _getCurrentFile()
 	if currentFilename == filename and currentOrigin == target and (printer.isPrinting() or printer.isPaused()):
 		make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
+
+	if (target, filename) in fileManager.get_busy_files():
+		make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 	# deselect the file if it's currently selected
 	if currentFilename is not None and filename == currentFilename:
@@ -381,4 +401,11 @@ def deleteGcodeFile(filename, target):
 		fileManager.remove_file(target, filename)
 
 	return NO_CONTENT
+
+def _getCurrentFile():
+	currentJob = printer.getCurrentJob()
+	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
+		return currentJob["file"]["origin"], currentJob["file"]["name"]
+	else:
+		return None, None
 

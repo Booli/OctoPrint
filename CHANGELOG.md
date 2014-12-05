@@ -18,6 +18,7 @@
   support is enabled -- STL) files to automatically add.
 * OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its 
   core functionality.
+* New type of API key: [App Session Keys](http://docs.octoprint.org/en/devel/api/apps.html) for trusted applications
 
 ### Improvements
 
@@ -30,31 +31,63 @@
 * Better error reporting for timelapse rendering and system commands
 * Custom control can now be defined so that they show a Confirm dialog with configurable text before executing 
   ([#532](https://github.com/foosel/OctoPrint/issues/532) and [#590](https://github.com/foosel/OctoPrint/pull/590))
-* Slicing has been greatly improved and now allows for a definition of slicing profiles to use for slicing plus overrides
-  which can be defined per slicing job. Slicers themselves are integrated into the system via ``SlicingPlugins``. Please
-  note that the [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
-  [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
-  [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
-  accommodate the new integration.
+* Slicing has been greatly improved:
+  * It now allows for a definition of slicing profiles to use for slicing plus overrides which can be defined per slicing 
+    job (defining overrides is not yet part of the UI but it's on the roadmap). 
+  * Slicers themselves are integrated into the system via ``SlicingPlugins``. 
+  * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the 
+    [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See 
+    [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to 
+    accommodate the new integration.
+  * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
   uploaded STL files including removal and reslicing) and also allows folders (not yet supported by UI)
+* Also interpret lines starting with "!!" as errors
+* Added deletion of pyc files to the `python setup.py clean` command
+* Settings now show a QRCode for the API Key ([#637](https://github.com/foosel/OctoPrint/pull/637))
+* Username in login dialog is not automatically capitalized on mobile devices anymore ([#639](https://github.com/foosel/OctoPrint/pull/639))
+* "Slicing Done" and "Streaming Done" notifications now have a green background ([#558](https://github.com/foosel/OctoPrint/issues/558))
+* Files that are currently in use, be it for slicing, printing or whatever, are now tracked and can not be deleted as
+  long as they are in use
+* Settings in UI get refreshed when opening settings dialog
+* New event "SettingsUpdated"
 
 ### Bug Fixes
 
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
+* [#633](https://github.com/foosel/OctoPrint/issues/633) - Correctly interpret temperature lines from multi extruder 
+  setups under Smoothieware
+* [#556](https://github.com/foosel/OctoPrint/issues/556) - Allow login of the same user from multiple browsers without
+  side effects
+* Various fixes of bugs in newly introduced features and improvements:
+  * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis
+    queue
+* Various fixes without tickets:
+  * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
+  * Do not deliver the API key on settings API unless user has admin rights
 
-## 1.1.1 (Unreleased)
+## 1.1.2 (Unreleased)
+
+### Bug Fixes
+
+* [#634](https://github.com/foosel/OctoPrint/pull/634) - Fixed missing `branch` fields in version dicts generated
+  by versioneer
+
+## 1.1.1 (2014-10-27)
 
 ### Improvements
 
 * The API is now enabled by default and the API key -- if not yet set -- will be automatically generated on first
   server start and written back into ``config.yaml``
 * Event subscriptions are now enabled by default (it was an accident that they weren't)
+* Generate the key used for session hashing individually for each server instance
+* Generate the salt used for hashing user passwords individually for each server instance
 
 ### Bug Fixes
 
 * [#580](https://github.com/foosel/OctoPrint/issues/580) - Properly unset job data when instructed so by callers
+* [#604](https://github.com/foosel/OctoPrint/issues/604) - Properly initialize settings basedir on server startup
 * [IRC] Also allow downloading .g files via Tornado
 
 ## 1.1.0 (2014-09-03)

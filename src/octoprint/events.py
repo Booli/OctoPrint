@@ -79,6 +79,10 @@ class Events(object):
 	SLICING_STARTED = "SlicingStarted"
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
+	SLICING_CANCELLED = "SlicingCancelled"
+
+	# Settings
+	SETTINGS_UPDATED = "SettingsUpdated"
 
 
 def eventManager():

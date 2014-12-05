@@ -1,5 +1,5 @@
-from __future__ import absolute_import
 # coding=utf-8
+from __future__ import absolute_import
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -212,6 +212,9 @@ class VirtualPrinter():
 			for i in range(len(self.temp)):
 				allTemps.append((i, self.temp[i], self.targetTemp[i]))
 			allTempsString = " ".join(map(lambda x: "T%d:%.2f /%.2f" % x if includeTarget else "T%d:%.2f" % (x[0], x[1]), allTemps))
+
+			if settings().getBoolean(["devel", "virtualPrinter", "smoothieTemperatureReporting"]):
+				allTempsString = allTempsString.replace("T0:", "T:")
 
 			if settings().getBoolean(["devel", "virtualPrinter", "hasBed"]):
 				if includeTarget:

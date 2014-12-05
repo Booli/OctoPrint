@@ -11,3 +11,5 @@ netaddr
 watchdog
 sarge
 netifaces
+pylru
+rsa

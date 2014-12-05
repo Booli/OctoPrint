@@ -41,6 +41,7 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"secretKey": None,
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
 			"schemeHeader": "X-Scheme",
@@ -93,7 +94,8 @@ default_settings = {
 		"virtualSd": None,
 		"watched": None,
 		"plugins": None,
-		"slicingProfiles": None
+		"slicingProfiles": None,
+		"printerProfiles": None
 	},
 	"temperature": {
 		"profiles":
@@ -102,6 +104,10 @@ default_settings = {
 				{"name": "ABS", "extruder" : 230, "bed" : 70 },
 				{"name": "PLA", "extruder" : 200, "bed" : 0 }
 			]
+	},
+	"printerProfiles": {
+		"default": None,
+		"defaultProfile": {}
 	},
 	"printerParameters": {
 		"movementSpeed": {
@@ -178,6 +184,7 @@ default_settings = {
 	},
 	"accessControl": {
 		"enabled": True,
+		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
 		"autologinLocal": True,
@@ -201,7 +208,8 @@ default_settings = {
 	"api": {
 		"enabled": True,
 		"key": None,
-		"allowCrossOrigin": False
+		"allowCrossOrigin": False,
+		"apps": {}
 	},
 	"terminalFilters": [
 		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
@@ -219,6 +227,7 @@ default_settings = {
 			"includeCurrentToolInTemps": True,
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False
 		}
 	}
@@ -235,6 +244,7 @@ class Settings(object):
 
 		self._config = None
 		self._dirty = False
+		self._mtime = None
 
 		self._init_settings_dir(basedir)
 
@@ -254,6 +264,9 @@ class Settings(object):
 		else:
 			self.settings_dir = _resolveSettingsDir(APPNAME)
 
+		if not os.path.isdir(self.settings_dir):
+			os.makedirs(self.settings_dir)
+
 	def _getDefaultFolder(self, type):
 		folder = default_settings["folder"][type]
 		if folder is None:
@@ -266,6 +279,7 @@ class Settings(object):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
+				self._mtime = self._last_modified()
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
@@ -274,92 +288,11 @@ class Settings(object):
 			self._migrateConfig()
 
 	def _migrateConfig(self):
-		if not self._config:
-			return
-
-		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
-			self._logger.info("Migrating config (event subscriptions)...")
-
-			# migrate event hooks to new format
-			placeholderRe = re.compile("%\((.*?)\)s")
-
-			eventNameReplacements = {
-				"ClientOpen": "ClientOpened",
-				"TransferStart": "TransferStarted"
-			}
-			payloadDataReplacements = {
-				"Upload": {"data": "{file}", "filename": "{file}"},
-				"Connected": {"data": "{port} at {baudrate} baud"},
-				"FileSelected": {"data": "{file}", "filename": "{file}"},
-				"TransferStarted": {"data": "{remote}", "filename": "{remote}"},
-				"TransferDone": {"data": "{remote}", "filename": "{remote}"},
-				"ZChange": {"data": "{new}"},
-				"CaptureStart": {"data": "{file}"},
-				"CaptureDone": {"data": "{file}"},
-				"MovieDone": {"data": "{movie}", "filename": "{gcode}"},
-				"Error": {"data": "{error}"},
-				"PrintStarted": {"data": "{file}", "filename": "{file}"},
-				"PrintDone": {"data": "{file}", "filename": "{file}"},
-			}
-
-			def migrateEventHook(event, command):
-				# migrate placeholders
-				command = placeholderRe.sub("{__\\1}", command)
-
-				# migrate event names
-				if event in eventNameReplacements:
-					event = eventNameReplacements["event"]
-
-				# migrate payloads to more specific placeholders
-				if event in payloadDataReplacements:
-					for key in payloadDataReplacements[event]:
-						command = command.replace("{__%s}" % key, payloadDataReplacements[event][key])
-
-				# return processed tuple
-				return event, command
-
-			disableSystemCommands = False
-			if "systemCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["systemCommandTrigger"]:
-				disableSystemCommands = not self._config["events"]["systemCommandTrigger"]["enabled"]
-
-			disableGcodeCommands = False
-			if "gcodeCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["gcodeCommandTrigger"]:
-				disableGcodeCommands = not self._config["events"]["gcodeCommandTrigger"]["enabled"]
-
-			disableAllCommands = disableSystemCommands and disableGcodeCommands
-			newEvents = {
-				"enabled": not disableAllCommands,
-				"subscriptions": []
-			}
-
-			if "systemCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["systemCommandTrigger"]:
-				for trigger in self._config["events"]["systemCommandTrigger"]["subscriptions"]:
-					if not ("event" in trigger and "command" in trigger):
-						continue
-
-					newTrigger = {"type": "system"}
-					if disableSystemCommands and not disableAllCommands:
-						newTrigger["enabled"] = False
-
-					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
-					newEvents["subscriptions"].append(newTrigger)
-
-			if "gcodeCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["gcodeCommandTrigger"]:
-				for trigger in self._config["events"]["gcodeCommandTrigger"]["subscriptions"]:
-					if not ("event" in trigger and "command" in trigger):
-						continue
-
-					newTrigger = {"type": "gcode"}
-					if disableGcodeCommands and not disableAllCommands:
-						newTrigger["enabled"] = False
-
-					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
-					newTrigger["command"] = newTrigger["command"].split(",")
-					newEvents["subscriptions"].append(newTrigger)
-
-			self._config["events"] = newEvents
+		dirty = False
+		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config):
+			dirty = migrate() or dirty
+		if dirty:
 			self.save(force=True)
-			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
 
 	def _migrate_reverse_proxy_config(self):
 		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
@@ -473,16 +406,23 @@ class Settings(object):
 
 	def save(self, force=False):
 		if not self._dirty and not force:
-			return
+			return False
 
 		with open(self._configfile, "wb") as configFile:
 			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self.load()
+		return True
+
+	def _last_modified(self):
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None):
+	def get(self, path, asdict=False, defaults=None, merged=False):
+		import octoprint.util as util
+
 		if len(path) == 0:
 			return None
 
@@ -514,6 +454,8 @@ class Settings(object):
 		for key in keys:
 			if key in config.keys():
 				value = config[key]
+				if merged and key in defaults:
+					value = util.dict_merge(defaults[key], value)
 			elif key in defaults:
 				value = defaults[key]
 			else:
@@ -632,6 +574,9 @@ class Settings(object):
 	def set(self, path, value, force=False, defaults=None):
 		if len(path) == 0:
 			return
+
+		if self._mtime is not None and self._last_modified() != self._mtime:
+			self.load()
 
 		config = self._config
 		if defaults is None:

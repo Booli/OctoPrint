@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import pylru
 
 import octoprint.filemanager
 
@@ -32,7 +33,7 @@ class StorageInterface(object):
 	def remove_folder(self, path, recursive=True):
 		raise NotImplementedError()
 
-	def add_file(self, path, file_object, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		raise NotImplementedError()
 
 	def remove_file(self, path):
@@ -89,6 +90,8 @@ class LocalFileStorage(StorageInterface):
 		import threading
 		self._metadata_lock = threading.Lock()
 
+		self._metadata_cache = pylru.lrucache(10)
+
 	@property
 	def analysis_backlog(self):
 		for entry in self._analysis_backlog_generator():
@@ -108,10 +111,16 @@ class LocalFileStorage(StorageInterface):
 			absolute_path = os.path.join(path, entry)
 			if os.path.isfile(absolute_path):
 				if not entry in metadata or not isinstance(metadata[entry], dict) or not "analysis" in metadata[entry]:
-					yield entry, absolute_path
+					printer_profile_rels = self.get_link(absolute_path, "printerprofile")
+					if printer_profile_rels:
+						printer_profile_id = printer_profile_rels[0]["id"]
+					else:
+						printer_profile_id = None
+
+					yield entry, absolute_path, printer_profile_id
 			elif os.path.isdir(absolute_path):
 				for sub_entry in self._analysis_backlog_generator(absolute_path):
-					yield self.join_path(entry, sub_entry), os.path.join(absolute_path, sub_entry)
+					yield self.join_path(entry, sub_entry[0]), sub_entry[1], sub_entry[2]
 
 	def file_exists(self, path):
 		path, name = self.sanitize(path)
@@ -218,13 +227,14 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
-	def add_file(self, path, file_object, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		"""
 		Adds the file ``file_object`` as ``path``
 
 		:param path: the file's new path, will be sanitized
 		:param file_object: a file object that provides a ``save`` method which will be called with the destination path
 		                    where the object should then store its contents
+		:param printer_profile: the printer profile associated with this file (if any)
 		:param links: any links to add with the file
 		:param allow_overwrite: if set to True no error will be raised if the file already exists and the existing file
 		                        and its metadata will just be silently overwritten
@@ -263,8 +273,13 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 		# process any links that were also provided for adding to the file
-		if links:
-			self._add_links(name, path, links)
+		if not links:
+			links = []
+
+		if printer_profile is not None:
+			links.append(("printerprofile", dict(id=printer_profile["id"], name=printer_profile["name"])))
+
+		self._add_links(name, path, links)
 
 		return self.rel_path((path, name))
 
@@ -318,6 +333,11 @@ class LocalFileStorage(StorageInterface):
 			return metadata[name]
 		else:
 			return None
+
+	def get_link(self, path, rel):
+		path, name = self.sanitize(path)
+		return self._get_links(name, path, rel)
+
 
 	def add_link(self, path, rel, data):
 		"""
@@ -506,6 +526,22 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 		except IndexError:
 			pass
+
+	def _get_links(self, name, path, searched_rel):
+		metadata = self._get_metadata(path)
+		result = []
+
+		if not name in metadata:
+			return result
+
+		if not "links" in metadata[name]:
+			return result
+
+		for data in metadata[name]["links"]:
+			if not "rel" in data or not data["rel"] == searched_rel:
+				continue
+			result.append(data)
+		return result
 
 	def _add_links(self, name, path, links):
 		file_type = octoprint.filemanager.get_file_type(name)
@@ -764,6 +800,9 @@ class LocalFileStorage(StorageInterface):
 		return path
 
 	def _get_metadata(self, path):
+		if path in self._metadata_cache:
+			return self._metadata_cache[path]
+
 		metadata_path = os.path.join(path, ".metadata.yaml")
 		if os.path.exists(metadata_path):
 			with self._metadata_lock:
@@ -785,3 +824,5 @@ class LocalFileStorage(StorageInterface):
 					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
 				except:
 					self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
+				else:
+					self._metadata_cache[path] = metadata

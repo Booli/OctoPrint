@@ -30,11 +30,14 @@ def getConnectionOptions():
 	}
 
 class Printer():
-	def __init__(self, fileManager, analysisQueue):
+	def __init__(self, fileManager, analysisQueue, printerProfileManager):
 		from collections import deque
+
+		self._logger = logging.getLogger(__name__)
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
+		self._printerProfileManager = printerProfileManager
 
 		# state
 		# TODO do we really need to hold the temperature here?
@@ -120,32 +123,32 @@ class Printer():
 	def _sendAddTemperatureCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addTemperature(data)
-			except: pass
+			except: self._logger.exception("Exception while adding temperature data point")
 
 	def _sendAddLogCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addLog(data)
-			except: pass
+			except: self._logger.exception("Exception while adding communication log entry")
 
 	def _sendAddMessageCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.addMessage(data)
-			except: pass
+			except: self._logger.exception("Exception while adding printer message")
 
 	def _sendCurrentDataCallbacks(self, data):
 		for callback in self._callbacks:
 			try: callback.sendCurrentData(copy.deepcopy(data))
-			except: pass
+			except: self._logger.exception("Exception while pushing current data")
 
 	def _sendTriggerUpdateCallbacks(self, type):
 		for callback in self._callbacks:
 			try: callback.sendEvent(type)
-			except: pass
+			except: self._logger.exception("Exception while pushing trigger update")
 
 	def _sendFeedbackCommandOutput(self, name, output):
 		for callback in self._callbacks:
 			try: callback.sendFeedbackCommandOutput(name, output)
-			except: pass
+			except: self._logger.exception("Exception while pushing feedback command output")
 
 	#~~ callback from metadata analysis event
 
@@ -157,7 +160,7 @@ class Printer():
 
 	#~~ printer commands
 
-	def connect(self, port=None, baudrate=None):
+	def connect(self, port=None, baudrate=None, profile=None):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
@@ -165,6 +168,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self)
+		self._printerProfileManager.select(profile)
 
 	def disconnect(self):
 		"""
@@ -173,6 +177,7 @@ class Printer():
 		if self._comm is not None:
 			self._comm.close()
 		self._comm = None
+		self._printerProfileManager.deselect()
 		eventManager().fire(Events.DISCONNECTED)
 
 	def command(self, command):
@@ -192,16 +197,18 @@ class Printer():
 			self._comm.sendCommand(command)
 
 	def jog(self, axis, amount):
-		movementSpeed = settings().get(["printerParameters", "movementSpeed", ["x", "y", "z"]], asdict=True)
-		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movementSpeed[axis]), "G90"])
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		movement_speed = printer_profile["axes"][axis]["speed"]
+		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movement_speed), "G90"])
 
 	def home(self, axes):
 		for axis in axes:
 			self.commands(["G91", "G28 %s0" % axis.upper(), "G90"])
 
 	def extrude(self, amount):
-		extrusionSpeed = settings().get(["printerParameters", "movementSpeed", "e"])
-		self.commands(["G91", "G1 E%s F%d" % (amount, extrusionSpeed), "G90"])
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		extrusion_speed = printer_profile["axes"]["e"]["speed"]
+		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"])
 
 	def changeTool(self, tool):
 		try:
@@ -212,7 +219,9 @@ class Printer():
 
 	def setTemperature(self, type, value):
 		if type.startswith("tool"):
-			if settings().getInt(["printerParameters", "numExtruders"]) > 1:
+			printer_profile = self._printerProfileManager.get_current_or_default()
+			extruder_count = printer_profile["extruder"]["count"]
+			if extruder_count > 1:
 				try:
 					toolNum = int(type[len("tool"):])
 					self.command("M104 T%d S%f" % (toolNum, value))
@@ -249,7 +258,7 @@ class Printer():
 
 	def selectFile(self, filename, sd, printAfterSelect=False):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
-			logging.info("Cannot load file: printer not connected or currently busy")
+			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
 
 		self._printAfterSelect = printAfterSelect
@@ -299,9 +308,12 @@ class Printer():
 		self._comm.cancelPrint()
 
 		if disableMotorsAndHeater:
+			printer_profile = self._printerProfileManager.get_current_or_default()
+			extruder_count = printer_profile["extruder"]["count"]
+
 			# disable motors, switch off hotends, bed and fan
 			commands = ["M84"]
-			commands.extend(map(lambda x: "M104 T%d S0" % x, range(settings().getInt(["printerParameters", "numExtruders"]))))
+			commands.extend(map(lambda x: "M104 T%d S0" % x, range(extruder_count)))
 			commands.extend(["M140 S0", "M106 S0"])
 			self.commands(commands)
 
@@ -562,7 +574,7 @@ class Printer():
 
 	def addSdFile(self, filename, absolutePath, streamingFinishedCallback):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-			logging.error("No connection to printer or printer is busy")
+			self._logger.error("No connection to printer or printer is busy")
 			return
 
 		self._streamingFinishedCallback = streamingFinishedCallback
@@ -650,10 +662,11 @@ class Printer():
 
 	def getCurrentConnection(self):
 		if self._comm is None:
-			return "Closed", None, None
+			return "Closed", None, None, None
 
 		port, baudrate = self._comm.getConnection()
-		return self._comm.getStateString(), port, baudrate
+		printer_profile = self._printerProfileManager.get_current_or_default()
+		return self._comm.getStateString(), port, baudrate, printer_profile
 
 	def isClosedOrError(self):
 		return self._comm is None or self._comm.isClosedOrError()

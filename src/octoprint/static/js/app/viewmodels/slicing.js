@@ -1,11 +1,15 @@
-function SlicingViewModel(loginStateViewModel) {
+function SlicingViewModel(loginStateViewModel, printerProfilesViewModel) {
     var self = this;
 
     self.loginState = loginStateViewModel;
+    self.printerProfiles = printerProfilesViewModel;
 
     self.target = undefined;
     self.file = undefined;
     self.data = undefined;
+
+    self.defaultSlicer = undefined;
+    self.defaultProfile = undefined;
 
     self.gcodeFilename = ko.observable();
 
@@ -14,12 +18,14 @@ function SlicingViewModel(loginStateViewModel) {
     self.slicers = ko.observableArray();
     self.profile = ko.observable();
     self.profiles = ko.observableArray();
+    self.printerProfile = ko.observable();
 
     self.show = function(target, file) {
         self.target = target;
         self.file = file;
         self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: self.file}));
         self.gcodeFilename(self.file.substr(0, self.file.lastIndexOf(".")));
+        self.printerProfile(self.printerProfiles.currentProfile());
         $("#slicing_configuration_dialog").modal("show");
     };
 
@@ -67,6 +73,8 @@ function SlicingViewModel(loginStateViewModel) {
         if (selectedSlicer != undefined) {
             self.slicer(selectedSlicer);
         }
+
+        self.defaultSlicer = selectedSlicer;
     };
 
     self.profilesForSlicer = function(key) {
@@ -99,6 +107,8 @@ function SlicingViewModel(loginStateViewModel) {
         if (selectedProfile != undefined) {
             self.profile(selectedProfile);
         }
+
+        self.defaultProfile = selectedProfile;
     };
 
     self.slice = function() {
@@ -113,6 +123,7 @@ function SlicingViewModel(loginStateViewModel) {
             command: "slice",
             slicer: self.slicer(),
             profile: self.profile(),
+            printerProfile: self.printerProfile(),
             gcode: gcodeFilename
         };
 
@@ -127,8 +138,8 @@ function SlicingViewModel(loginStateViewModel) {
         $("#slicing_configuration_dialog").modal("hide");
 
         self.gcodeFilename(undefined);
-        self.slicer(undefined);
-        self.profile(undefined);
+        self.slicer(self.defaultSlicer);
+        self.profile(self.defaultProfile);
     };
 
     self._sanitize = function(name) {

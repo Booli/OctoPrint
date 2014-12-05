@@ -176,6 +176,13 @@ class BlueprintPlugin(Plugin):
 
 		return None
 
+	def is_blueprint_protected(self):
+		"""
+		Whether the blueprint is supposed to be protected by API key (the default) or not.
+		"""
+
+		return True
+
 
 class SettingsPlugin(Plugin):
 	def on_settings_load(self):
@@ -194,11 +201,13 @@ class SlicerPlugin(Plugin):
 	def is_slicer_configured(self):
 		return False
 
-	def get_slicer_type(self):
-		return None
-
-	def get_slicer_name(self):
-		return None
+	def get_slicer_properties(self):
+		return dict(
+			type=None,
+			name=None,
+			same_device=True,
+			progress_report=False
+		)
 
 	def get_slicer_profile_options(self):
 		return None
@@ -212,7 +221,14 @@ class SlicerPlugin(Plugin):
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
 		pass
 
-	def do_slice(self, model_path, machinecode_path=None, profile_path=None):
+	def do_slice(self, model_path, printer_profile, machinecode_path=None, profile_path=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
 		pass
 
+	def cancel_slicing(self, machinecode_path):
+		pass
+
+
+class AppPlugin(Plugin):
+	def get_additional_apps(self):
+		return []
 

@@ -44,68 +44,115 @@ class TemporaryProfile(object):
 			pass
 
 
+class SlicingCancelled(BaseException):
+	pass
+
+
 class SlicingManager(object):
-	def __init__(self, profile_path):
+	def __init__(self, profile_path, printer_profile_manager):
 		self._profile_path = profile_path
+		self._printer_profile_manager = printer_profile_manager
 
 		self._slicers = dict()
 		self._slicer_names = dict()
 		self._load_slicers()
 
+		self._progress_callbacks = []
+		self._last_progress_report = None
+
+	def register_progress_callback(self, callback):
+		self._progress_callbacks.append(callback)
+
+	def unregister_progress_callback(self, callback):
+		self._progress_callbacks.remove(callback)
+
 	def _load_slicers(self):
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
 		for name, plugin in plugins.items():
 			if plugin.is_slicer_configured():
-				self._slicers[plugin.get_slicer_type()] = plugin
+				self._slicers[plugin.get_slicer_properties()["type"]] = plugin
 
 	@property
 	def slicing_enabled(self):
-		return len(self.registered_slicers) > 0
+		return len(self.configured_slicers) > 0
 
 	@property
 	def registered_slicers(self):
 		return self._slicers.keys()
 
 	@property
+	def configured_slicers(self):
+		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
+
+	@property
 	def default_slicer(self):
 		slicer_name = settings().get(["slicing", "defaultSlicer"])
-		if slicer_name in self.registered_slicers:
+		if slicer_name in self.configured_slicers:
 			return slicer_name
 		else:
 			return None
 
-	def get_slicer(self, slicer):
-		return self._slicers[slicer] if slicer in self._slicers else None
+	def get_slicer(self, slicer, require_configured=True):
+		return self._slicers[slicer] if slicer in self._slicers and (not require_configured or self._slicers[slicer].is_slicer_configured()) else None
 
-	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None):
+	def slice(self, slicer_name, source_path, dest_path, profile_name, callback, callback_args=None, callback_kwargs=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None, printer_profile_id=None, position=None):
 		if callback_args is None:
 			callback_args = ()
 		if callback_kwargs is None:
 			callback_kwargs = dict()
 
-		if not slicer_name in self.registered_slicers:
-			error = "No such slicer: {slicer_name}".format(**locals())
+		if not slicer_name in self.configured_slicers:
+			if not slicer_name in self.registered_slicers:
+				error = "No such slicer: {slicer_name}".format(**locals())
+			else:
+				error = "Slicer not configured: {slicer_name}".format(**locals())
 			callback_kwargs.update(dict(_error=error))
 			callback(*callback_args, **callback_kwargs)
 			return False, error
 
 		slicer = self.get_slicer(slicer_name)
 
-		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, callback, callback_args, callback_kwargs):
-			with self.temporary_profile(slicer.get_slicer_type(), name=profile_name, overrides=overrides) as profile_path:
-				ok, result = slicer.do_slice(model_path, machinecode_path=machinecode_path, profile_path=profile_path)
+		printer_profile = None
+		if printer_profile_id is not None:
+			printer_profile = self._printer_profile_manager.get(printer_profile_id)
 
-			if not ok:
-				callback_kwargs.update(dict(_error=result))
-			callback(*callback_args, **callback_kwargs)
+		if printer_profile is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+
+		def slicer_worker(slicer, model_path, machinecode_path, profile_name, overrides, printer_profile, position, callback, callback_args, callback_kwargs):
+			try:
+				slicer_name = slicer.get_slicer_properties()["type"]
+				with self.temporary_profile(slicer_name, name=profile_name, overrides=overrides) as profile_path:
+					ok, result = slicer.do_slice(
+						model_path,
+						printer_profile,
+						machinecode_path=machinecode_path,
+						profile_path=profile_path,
+						position=position,
+						on_progress=on_progress,
+						on_progress_args=on_progress_args,
+						on_progress_kwargs=on_progress_kwargs
+					)
+
+				if not ok:
+					callback_kwargs.update(dict(_error=result))
+			except SlicingCancelled:
+				callback_kwargs.update(dict(_cancelled=True))
+			finally:
+				callback(*callback_args, **callback_kwargs)
 
 		import threading
 		slicer_worker_thread = threading.Thread(target=slicer_worker,
-		                                        args=(slicer, source_path, dest_path, profile_name, overrides, callback, callback_args, callback_kwargs))
+		                                        args=(slicer, source_path, dest_path, profile_name, overrides, printer_profile, position, callback, callback_args, callback_kwargs))
 		slicer_worker_thread.daemon = True
 		slicer_worker_thread.start()
 		return True, None
 
+	def cancel_slicing(self, slicer_name, source_path, dest_path):
+		if not slicer_name in self.registered_slicers:
+			return
+		slicer = self.get_slicer(slicer_name)
+		slicer.cancel_slicing(dest_path)
 
 	def load_profile(self, slicer, name):
 		if not slicer in self.registered_slicers:
