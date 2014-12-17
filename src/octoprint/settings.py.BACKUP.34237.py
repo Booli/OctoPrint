@@ -113,6 +113,7 @@ default_settings = {
 		"pauseTriggers": [],
 		"defaultExtrusionLength": 5
 	},
+<<<<<<< HEAD
 	"appearance": {
 		"name": "Xeed",
 		"color": "default"
@@ -158,6 +159,9 @@ default_settings = {
 			]
 		}
 	],
+=======
+	"controls": [],
+>>>>>>> devel
 	"system": {
 		"actions": [
 			{"name": "Shutdown", "action": "shutdown", "command": "sudo shutdown -h now", "confirm": "You are about to shutdown the system."},

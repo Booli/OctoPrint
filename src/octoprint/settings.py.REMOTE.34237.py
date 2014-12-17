@@ -24,14 +24,14 @@ def settings(init=False, configfile=None, basedir=None):
 
 default_settings = {
 	"serial": {
-		"port": "/dev/ttyUSB0",
-		"baudrate": 115200,
-		"autoconnect": True,
+		"port": None,
+		"baudrate": None,
+		"autoconnect": False,
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 60,
+			"communication": 5,
 			"temperature": 5,
 			"sdStatus": 1
 		},
@@ -70,7 +70,7 @@ default_settings = {
 		}
 	},
 	"gcodeViewer": {
-		"enabled": False,
+		"enabled": True,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
@@ -81,7 +81,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": False,
+		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False
@@ -98,12 +98,10 @@ default_settings = {
 		"printerProfiles": None
 	},
 	"temperature": {
-		"profiles":
-			[
-				{"name": "HYBRID", "extruder": 260, "bed" : 0 },
-				{"name": "ABS", "extruder" : 230, "bed" : 70 },
-				{"name": "PLA", "extruder" : 200, "bed" : 0 }
-			]
+		"profiles": [
+			{"name": "ABS", "extruder" : 210, "bed" : 100 },
+			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+		]
 	},
 	"printerProfiles": {
 		"default": None,
@@ -113,66 +111,18 @@ default_settings = {
 		"pauseTriggers": [],
 		"defaultExtrusionLength": 5
 	},
-	"appearance": {
-		"name": "Xeed",
-		"color": "default"
-	},
-	"controls": [
-		{
-			"name": "Xeed",
-			"type": "section",
-			"children": [
-				{"type": "command", "command": "G32", "name": "Level bed", "confirm": "Do you want to level the bed?"},
-				{"type": "commands", "commands": ["G91", "G1 E1200 F3000", "G1 E350 F300", "G90"], "name": "Quick load", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
-				{"type": "commands", "commands": ["G91", "G1 E-1200 F3000", "G1 E-300 F3000", "G90"], "name": "Quick unload", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
-			]
-		},
-		{
-			"name": "Printing Controls",
-			"type": "section",
-			"children": [
-				{
-					"command": "M220 S%(speed)s",
-					"name": "Printer Speed",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "%",
-							"parameter": "speed",
-							"default":"100"
-						}
-					]
-				},
-				{
-					"command": "M221 S%(flow)s",
-					"name": "Flow rate",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "%",
-							"parameter": "flow",
-							"default":"100"
-						}
-					]
-				}
-			]
-		}
-	],
+	"controls": [],
 	"system": {
-		"actions": [
-			{"name": "Shutdown", "action": "shutdown", "command": "sudo shutdown -h now", "confirm": "You are about to shutdown the system."},
-			{"name": "Reboot", "action": "reboot", "command": "sudo shutdown -r now", "confirm": "You are about to reboot the system."},
-			{"name": "Update LilyPrint", "action": "update", "command": "cd ~/OctoPrint && git pull && sudo pip install -r requirements.txt", "confirm": "You are about to update LilyPrint, make sure you have a working internet connection and reboot after."}
-		]
+		"actions": []
 	},
 	"accessControl": {
 		"enabled": True,
 		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
-		"autologinLocal": True,
+		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": "lily"
+		"autologinAs": None
 	},
 	"cura": {
 		"enabled": False,
@@ -202,7 +152,7 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": True,
+			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,

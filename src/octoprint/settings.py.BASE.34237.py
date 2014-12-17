@@ -24,14 +24,14 @@ def settings(init=False, configfile=None, basedir=None):
 
 default_settings = {
 	"serial": {
-		"port": "/dev/ttyUSB0",
-		"baudrate": 115200,
-		"autoconnect": True,
+		"port": None,
+		"baudrate": None,
+		"autoconnect": False,
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
 			"connection": 2,
-			"communication": 60,
+			"communication": 5,
 			"temperature": 5,
 			"sdStatus": 1
 		},
@@ -70,7 +70,7 @@ default_settings = {
 		}
 	},
 	"gcodeViewer": {
-		"enabled": False,
+		"enabled": True,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
@@ -81,7 +81,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": False,
+		"sdSupport": True,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False
@@ -98,81 +98,49 @@ default_settings = {
 		"printerProfiles": None
 	},
 	"temperature": {
-		"profiles":
-			[
-				{"name": "HYBRID", "extruder": 260, "bed" : 0 },
-				{"name": "ABS", "extruder" : 230, "bed" : 70 },
-				{"name": "PLA", "extruder" : 200, "bed" : 0 }
-			]
+		"profiles": [
+			{"name": "ABS", "extruder" : 210, "bed" : 100 },
+			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+		]
 	},
 	"printerProfiles": {
 		"default": None,
 		"defaultProfile": {}
 	},
 	"printerParameters": {
+		"movementSpeed": {
+			"x": 6000,
+			"y": 6000,
+			"z": 200,
+			"e": 300
+		},
 		"pauseTriggers": [],
+		"invertAxes": [],
+		"numExtruders": 1,
+		"extruderOffsets": [
+			{"x": 0.0, "y": 0.0}
+		],
+		"bedDimensions": {
+			"x": 200.0, "y": 200.0, "r": 100, "circular": False
+		},
 		"defaultExtrusionLength": 5
 	},
 	"appearance": {
-		"name": "Xeed",
+		"name": "",
 		"color": "default"
 	},
-	"controls": [
-		{
-			"name": "Xeed",
-			"type": "section",
-			"children": [
-				{"type": "command", "command": "G32", "name": "Level bed", "confirm": "Do you want to level the bed?"},
-				{"type": "commands", "commands": ["G91", "G1 E1200 F3000", "G1 E350 F300", "G90"], "name": "Quick load", "confirm": "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
-				{"type": "commands", "commands": ["G91", "G1 E-1200 F3000", "G1 E-300 F3000", "G90"], "name": "Quick unload", "confirm": "Do you want to unload filament? Make sure you are ready to roll up the filament."}
-			]
-		},
-		{
-			"name": "Printing Controls",
-			"type": "section",
-			"children": [
-				{
-					"command": "M220 S%(speed)s",
-					"name": "Printer Speed",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "%",
-							"parameter": "speed",
-							"default":"100"
-						}
-					]
-				},
-				{
-					"command": "M221 S%(flow)s",
-					"name": "Flow rate",
-					"type": "parametric_command",
-					"input": [
-						{
-							"name": "%",
-							"parameter": "flow",
-							"default":"100"
-						}
-					]
-				}
-			]
-		}
-	],
+	"controls": [],
 	"system": {
-		"actions": [
-			{"name": "Shutdown", "action": "shutdown", "command": "sudo shutdown -h now", "confirm": "You are about to shutdown the system."},
-			{"name": "Reboot", "action": "reboot", "command": "sudo shutdown -r now", "confirm": "You are about to reboot the system."},
-			{"name": "Update LilyPrint", "action": "update", "command": "cd ~/OctoPrint && git pull && sudo pip install -r requirements.txt", "confirm": "You are about to update LilyPrint, make sure you have a working internet connection and reboot after."}
-		]
+		"actions": []
 	},
 	"accessControl": {
 		"enabled": True,
 		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
-		"autologinLocal": True,
+		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": "lily"
+		"autologinAs": None
 	},
 	"cura": {
 		"enabled": False,
@@ -202,27 +170,16 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": True,
+			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
-			"movementSpeed": {
-				"x": 6000,
-				"y": 6000,
-				"z": 200,
-				"e": 300
-			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
 			"smoothieTemperatureReporting": False,
-			"extendedSdFileList": False,
-			"throttle": 0.01,
-			"waitOnLongMoves": False,
-			"rxBuffer": 64,
-			"txBuffer": 40,
-			"commandBuffer": 4
+			"extendedSdFileList": False
 		}
 	}
 }
@@ -283,79 +240,10 @@ class Settings(object):
 
 	def _migrateConfig(self):
 		dirty = False
-		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config, self._migrate_printer_parameters):
+		for migrate in (self._migrate_event_config, self._migrate_reverse_proxy_config):
 			dirty = migrate() or dirty
 		if dirty:
 			self.save(force=True)
-
-	def _migrate_printer_parameters(self):
-		default_profile = self._config["printerProfiles"]["defaultProfile"] if "printerProfiles" in self._config and "defaultProfile" in self._config["printerProfiles"] else dict()
-		dirty = False
-
-		if "printerParameters" in self._config:
-			printer_parameters = self._config["printerParameters"]
-
-			if "movementSpeed" in printer_parameters or "invertAxes" in printer_parameters:
-				default_profile["axes"] = dict(x=dict(), y=dict(), z=dict(), e=dict())
-				if "movementSpeed" in printer_parameters:
-					for axis in ("x", "y", "z", "e"):
-						if axis in printer_parameters["movementSpeed"]:
-							default_profile["axes"][axis]["speed"] = printer_parameters["movementSpeed"][axis]
-					del self._config["printerParameters"]["movementSpeed"]
-				if "invertedAxes" in printer_parameters:
-					for axis in ("x", "y", "z", "e"):
-						if axis in printer_parameters["invertedAxes"]:
-							default_profile["axes"][axis]["inverted"] = True
-					del self._config["printerParameters"]["invertedAxes"]
-
-			if "numExtruders" in printer_parameters or "extruderOffsets" in printer_parameters:
-				if not "extruder" in default_profile:
-					default_profile["extruder"] = dict()
-
-				if "numExtruders" in printer_parameters:
-					default_profile["extruder"]["count"] = printer_parameters["numExtruders"]
-					del self._config["printerParameters"]["numExtruders"]
-				if "extruderOffsets" in printer_parameters:
-					extruder_offsets = []
-					for offset in printer_parameters["extruderOffsets"]:
-						if "x" in offset and "y" in offset:
-							extruder_offsets.append((offset["x"], offset["y"]))
-					default_profile["extruder"]["offsets"] = extruder_offsets
-					del self._config["printerParameters"]["extruderOffsets"]
-
-			if "bedDimensions" in printer_parameters:
-				bed_dimensions = printer_parameters["bedDimensions"]
-				if not "volume" in default_profile:
-					default_profile["volume"] = dict()
-
-				if "circular" in bed_dimensions and "r" in bed_dimensions and bed_dimensions["circular"]:
-					default_profile["volume"]["formFactor"] = "circular"
-					default_profile["volume"]["width"] = 2 * bed_dimensions["r"]
-					default_profile["volume"]["depth"] = default_profile["volume"]["width"]
-				elif "x" in bed_dimensions or "y" in bed_dimensions:
-					default_profile["volume"]["formFactor"] = "rectangular"
-					if "x" in bed_dimensions:
-						default_profile["volume"]["width"] = bed_dimensions["x"]
-					if "y" in bed_dimensions:
-						default_profile["volume"]["depth"] = bed_dimensions["y"]
-				del self._config["printerParameters"]["bedDimensions"]
-
-			dirty = True
-
-		if "appearance" in self._config:
-			if "name" in self._config["appearance"]:
-				default_profile["name"] = self._config["appearance"]["name"]
-			if "color" in self._config["appearance"]:
-				default_profile["color"] = self._config["appearance"]["color"]
-
-			del self._config["appearance"]
-			dirty = True
-
-		if dirty:
-			if not "printerProfiles" in self._config:
-				self._config["printerProfiles"] = dict()
-			self._config["printerProfiles"]["defaultProfile"] = default_profile
-		return dirty
 
 	def _migrate_reverse_proxy_config(self):
 		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
