@@ -44,7 +44,7 @@ class PrinterProfileManager(object):
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
 			y = dict(speed=6000, inverted=False),
-			z = dict(speed=200, inverted= ),
+			z = dict(speed=200, inverted=True),
 			e = dict(speed=300, inverted=False)
 		)
 	)
