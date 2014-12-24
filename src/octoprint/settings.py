@@ -171,7 +171,7 @@ default_settings = {
 		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
-		"autologinLocal": True,
+		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": "lily"
 	},
