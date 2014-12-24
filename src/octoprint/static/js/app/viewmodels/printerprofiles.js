@@ -215,7 +215,7 @@ function PrinterProfilesViewModel() {
         self.editorVolumeHeight(data.volume.height);
         self.editorVolumeFormFactor(data.volume.formFactor);
 
-        self.editorHeatedBed(data.volume.heatedBed);
+        self.editorHeatedBed(data.heatedBed);
 
         self.editorNozzleDiameter(data.extruder.nozzleDiameter);
         self.editorExtruders(data.extruder.count);
@@ -301,7 +301,7 @@ function PrinterProfilesViewModel() {
             for (var i = 1; i < self.editorExtruders(); i++) {
                 var offset = [0.0, 0.0];
                 if (i < self.editorExtruderOffsets().length) {
-                    offset = self.editorExtruderOffsets()[i];
+                    offset = [parseFloat(self.editorExtruderOffsets()[i]["x"]()), parseFloat(self.editorExtruderOffsets()[i]["y"]())];
                 }
                 profile.extruder.offsets.push(offset);
             }

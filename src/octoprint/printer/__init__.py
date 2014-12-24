@@ -35,8 +35,8 @@ class Printer():
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
-		self._estimationLogger = logging.getLogger("ESTIMATIONS")
-		self._printTimeLogger = logging.getLogger("PRINT_TIME")
+		#self._estimationLogger = logging.getLogger("ESTIMATIONS")
+		#self._printTimeLogger = logging.getLogger("PRINT_TIME")
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -388,24 +388,24 @@ class Printer():
 
 	def _estimateTotalPrintTime(self, progress, printTime):
 		if not progress or not printTime:
-			#self._estimationLogger.info("{progress};{printTime};;;".format(**locals()))
+			#self._estimationLogger.info("{progress};{printTime};;;;".format(**locals()))
 			return None
 
 		else:
 			newEstimate = printTime / progress
-
-			if self._timeEstimationData.is_stable():
-				#self._estimationLogger.info("{progress};{printTime};{newEstimate};;".format(**locals()))
-				return newEstimate
-
 			self._timeEstimationData.update(newEstimate)
 
-			#averageTotal = self._timeEstimationData.average_total
-			#averageDistance = self._timeEstimationData.average_distance
-			#
-			#self._estimationLogger.info("{progress};{printTime};{newEstimate};{averageTotal};{averageDistance}".format(**locals()))
+			result = None
+			if self._timeEstimationData.is_stable():
+				result = self._timeEstimationData.average_total_rolling
 
-			return None
+			#averageTotal = self._timeEstimationData.average_total
+			#averageTotalRolling = self._timeEstimationData.average_total_rolling
+			#averageDistance = self._timeEstimationData.average_distance
+
+			#self._estimationLogger.info("{progress};{printTime};{newEstimate};{averageTotal};{averageTotalRolling};{averageDistance}".format(**locals()))
+
+			return result
 
 	def _setProgressData(self, progress, filepos, printTime, cleanedPrintTime):
 		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
@@ -662,6 +662,9 @@ class Printer():
 	def mcReceivedRegisteredMessage(self, command, output):
 		self._sendFeedbackCommandOutput(command, output)
 
+	def mcForceDisconnect(self):
+		self.disconnect()
+
 	#~~ sd file handling
 
 	def getSdFiles(self):
@@ -888,6 +891,7 @@ class TimeEstimationHelper(object):
 	def __init__(self):
 		import collections
 		self._distances = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
+		self._totals = collections.deque([], self.__class__.STABLE_ROLLING_WINDOW)
 		self._sum_total = 0
 		self._count = 0
 		self._stable_counter = None
@@ -899,6 +903,7 @@ class TimeEstimationHelper(object):
 			old_average_total = self.average_total
 
 			self._sum_total += newEstimate
+			self._totals.append(newEstimate)
 			self._count += 1
 
 			if old_average_total:
@@ -918,6 +923,13 @@ class TimeEstimationHelper(object):
 			return None
 		else:
 			return self._sum_total / self._count
+
+	@property
+	def average_total_rolling(self):
+		if not self._count or self._count < self.__class__.STABLE_ROLLING_WINDOW:
+			return None
+		else:
+			return sum(self._totals) / len(self._totals)
 
 	@property
 	def average_distance(self):

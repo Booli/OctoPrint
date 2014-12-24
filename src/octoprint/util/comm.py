@@ -162,6 +162,7 @@ class MachineCom(object):
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
 		self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode")
+		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 
 		# SD status data
 		self._sdAvailable = False
@@ -670,6 +671,27 @@ class MachineCom(object):
 					break
 				if line.strip() is not "":
 					self._timeout = getNewTimeout("communication")
+
+				##~~ debugging output handling
+				if line.startswith("//"):
+					debugging_output = line[2:].strip()
+					if debugging_output.startswith("action:"):
+						action_command = debugging_output[len("action:"):].strip()
+
+						if action_command == "pause":
+							self._log("Pausing on request of the printer...")
+							self.setPause(True)
+						elif action_command == "resume":
+							self._log("Resuming on request of the printer...")
+							self.setPause(False)
+						elif action_command == "disconnect":
+							self._log("Disconnecting on request of the printer...")
+							self._callback.mcForceDisconnect()
+						else:
+							for hook in self._printer_action_hooks:
+								self._printer_action_hooks[hook](self, line, action_command)
+					else:
+						continue
 
 				##~~ Error handling
 				line = self._handleErrors(line)
@@ -1310,6 +1332,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def mcReceivedRegisteredMessage(self, command, message):
+		pass
+
+	def mcForceDisconnect(self):
 		pass
 
 ### Printing file information classes ##################################################################################

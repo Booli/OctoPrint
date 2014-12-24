@@ -24,22 +24,23 @@ class PrinterProfileManager(object):
 
 	default = dict(
 		id = "_default",
-		name = "Default",
-		model = "Generic RepRap Printer",
+		name = "Xeed",
+		model = "Xeed ",
 		color = "default",
 		volume=dict(
-			width = 200,
-			depth = 200,
-			height = 200,
+			width = 340,
+			depth = 220,
+			height = 250,
 			formFactor = BedTypes.RECTANGULAR,
 		),
 		heatedBed = False,
 		extruder=dict(
-			count = 1,
+			count = 2,
 			offsets = [
+				(0, 0),
 				(0, 0)
 			],
-			nozzleDiameter = 0.4
+			nozzleDiameter = 0.35
 		),
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
