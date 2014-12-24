@@ -168,10 +168,10 @@ default_settings = {
 	},
 	"accessControl": {
 		"enabled": True,
-		"salt": None,
+		"salt": "mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW",
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"userfile": None,
-		"autologinLocal": False,
+		"autologinLocal": True,
 		"localNetworks": ["127.0.0.0/8"],
 		"autologinAs": "lily"
 	},
