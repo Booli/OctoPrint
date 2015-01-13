@@ -246,6 +246,8 @@ class VirtualPrinter():
 			self.outgoing.put("// action:resume")
 		elif data == "action_disconnect":
 			self.outgoing.put("// action:disconnect")
+		elif data == "action_door":
+			self.outgoing.put("// action:door")
 
 	def _listSd(self):
 		self.outgoing.put("Begin file list")
