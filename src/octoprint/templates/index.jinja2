@@ -7,12 +7,14 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
+        <link href="{{ url_for('static', filename='css/jquery-ui.css') }}" rel="stylesheet" media="screen">
+        <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/bootstrap-modal.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/bootstrap-slider.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/font-awesome.min.css') }}" rel="stylesheet" media="screen">
-        <link href="{{ url_for('static', filename='css/jquery.fileupload-ui.css') }}" rel="stylesheet" media="screen">
         <link href="{{ url_for('static', filename='css/pnotify.min.css') }}" rel="stylesheet" media="screen">
+        <link href="{{ url_for('static', filename='css/keyboard.css') }}" rel="stylesheet" media="screen">
 
         {% if stylesheet == "less" %}
             <link href="{{ url_for('static', filename='less/octoprint.less') }}" rel="stylesheet/less" type="text/css" media="screen">
@@ -225,7 +227,7 @@
                         <div class="accordion-body collapse in overflow_visible" id="files">
                             <div class="accordion-inner">
                                 <form class="form-search">
-                                    <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
+                                    <input id="search" type="text" class="input-block search-query clearable" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
                                 </form>
                                 <div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
                                     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
@@ -649,9 +651,12 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modalmanager.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-modal.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap-slider.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.min.js') }}"></script>
+        <!-- Commenting for testing remove if works or sort out thinned out version of jquery.ui
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.core.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.widget.js') }}"></script>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.ui.mouse.js') }}"></script> -->
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.flot.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.iframe-transport.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery/jquery.fileupload.js') }}"></script>
@@ -662,6 +667,8 @@
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/detectmobilebrowser.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/md5.min.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/lib/pnotify.min.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/jquery.keyboard.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/lib/clearable.js') }}"></script>
 
         <!-- Include OctoPrint files -->
         <!-- TODO: merge/minimize in the future -->

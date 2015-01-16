@@ -531,5 +531,9 @@ $(function() {
             firstRunViewModel.showDialog();
         }
 
-    }
-);
+        //Attach keyboard to all input elements.
+        $("input[type='number']").keyboard({
+            usePreview: false,
+            autoAccept: true
+        });
+});
