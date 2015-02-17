@@ -2,7 +2,7 @@ $(function() {
         //~~ Initialize i18n
         var catalog = window["BABEL_TO_LOAD_" + LOCALE];
         if (catalog === undefined) {
-            catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined}
+            catalog = {messages: undefined, plural_expr: undefined, locale: undefined, domain: undefined};
         }
         babel.Translations.load(catalog).install();
 
@@ -65,6 +65,7 @@ $(function() {
             return false;
         });
 
+
         //~~ Initialize view models
         var loginStateViewModel = new LoginStateViewModel();
         var printerProfilesViewModel = new PrinterProfilesViewModel();
@@ -110,7 +111,7 @@ $(function() {
 
             // now we'll try to resolve all of the view model's constructor parameters via our view model map
             var constructorParameters = _.map(viewModelParameters, function(parameter){
-                return viewModelMap[parameter]
+                return viewModelMap[parameter];
             });
 
             if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
@@ -374,7 +375,7 @@ $(function() {
                     break;
                 }
                 node = node.parentNode;
-            } while (node != null);
+            } while (node !== null);
 
             if (foundLocal) {
                 dropZoneLocalBackground.addClass("hover");
@@ -471,7 +472,7 @@ $(function() {
                 if (!valueAccessor()) return;
                 ko.bindingHandlers.style.update(element, function() {
                     return { visibility: 'hidden' };
-                })
+                });
             }
         };
 
@@ -482,6 +483,7 @@ $(function() {
                 viewModel.onStartup();
             }
         });
+
 
         loginStateViewModel.subscribe(function(change, data) {
             if ("login" == change) {
@@ -566,7 +568,7 @@ $(function() {
                 clearTimeout(webcamDisableTimeout);
                 var webcamImage = $("#webcam_image");
                 var currentSrc = webcamImage.attr("src");
-                if (currentSrc === undefined || currentSrc.trim() == "") {
+                if (currentSrc === undefined || currentSrc.trim() === "") {
                     var newSrc = CONFIG_WEBCAM_STREAM;
                     if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
                         newSrc += "&";
