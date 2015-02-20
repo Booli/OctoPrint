@@ -16,7 +16,7 @@ from octoprint.events import eventManager, Events
 
 from octoprint.filemanager.destinations import FileDestinations
 
-from octoprint.plugin import plugin_manager, ProgressPlugin
+from octoprint.plugin import plugin_manager, plugin_settings, ProgressPlugin
 
 def getConnectionOptions():
 	"""
@@ -315,7 +315,9 @@ class Printer():
 			return
 		if self._selectedFile is None:
 			return
-
+		##~ M206 Xeed hack
+		zOffset = plugin_settings("zoffset").getFloat(["zOffset"])
+		self.commands(["M206 X0.0 Y0.0 Z%f" % zOffset])
 		self._timeEstimationData = TimeEstimationHelper()
 		self._lastProgressReport = None
 		self._setCurrentZ(None)
