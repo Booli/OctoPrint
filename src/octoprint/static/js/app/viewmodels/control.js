@@ -24,6 +24,9 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
 
     self.tools = ko.observableArray([]);
 
+    self.feedRate = ko.observable(100);
+    self.flowRate = ko.observable(100);
+
     self.feedbackControlLookup = {};
 
     self.controlsFromServer = [];
@@ -118,12 +121,15 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
     self._processControl = function(control) {
         if (control.type == "parametric_command" || control.type == "parametric_commands") {
             for (var i = 0; i < control.input.length; i++) {
-                control.input[i].value = control.input[i].default;
+                control.input[i].value = ko.observable(control.input[i].default);
+                if (!control.input[i].hasOwnProperty("slider")) {
+                    control.input[i].slider = false;
+                }
             }
         } else if (control.type == "feedback_command" || control.type == "feedback") {
             control.output = ko.observable("");
             self.feedbackControlLookup[control.name] = control.output;
-        } else if (control.type == "section") {
+        } else if (control.type == "section" || control.type == "row" || control.type == "section_row") {
             control.children = self._processControls(control.children);
         }
 
@@ -181,27 +187,20 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         };
         data[axis] = distance * multiplier;
 
-        $.ajax({
-            url: API_BASEURL + "printer/printhead",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
-        });
+        self.sendPrintHeadCommand(data);
     };
 
     self.sendHomeCommand = function(axis) {
-        var data = {
+        self.sendPrintHeadCommand({
             "command": "home",
             "axes": axis
-        };
+        });
+    };
 
-        $.ajax({
-            url: API_BASEURL + "printer/printhead",
-            type: "POST",
-            dataType: "json",
-            contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(data)
+    self.sendFeedRateCommand = function() {
+        self.sendPrintHeadCommand({
+            "command": "feedrate",
+            "factor": self.feedRate()
         });
     };
 
@@ -213,17 +212,35 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         self._sendECommand(-1);
     };
 
+    self.sendFlowRateCommand = function() {
+        self.sendToolCommand({
+            "command": "flowrate",
+            "factor": self.flowRate()
+        });
+    };
+
     self._sendECommand = function(dir) {
         var length = self.extrusionAmount();
         if (!length) length = self.settings.printer_defaultExtrusionLength();
 
-        var data = {
+        self.sendToolCommand({
             command: "extrude",
             amount: length * dir
-        };
+        });
+    };
 
+    self.sendSelectToolCommand = function(data) {
+        if (!data || !data.key()) return;
+
+        self.sendToolCommand({
+            command: "select",
+            tool: data.key()
+        });
+    };
+
+    self.sendPrintHeadCommand = function(data) {
         $.ajax({
-            url: API_BASEURL + "printer/tool",
+            url: API_BASEURL + "printer/printhead",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
@@ -231,20 +248,13 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         });
     };
 
-    self.sendSelectToolCommand = function(data) {
-        if (!data || !data.key()) return;
-
-        var payload = {
-            command: "select",
-            tool: data.key()
-        };
-
+    self.sendToolCommand = function(data) {
         $.ajax({
             url: API_BASEURL + "printer/tool",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=UTF-8",
-            data: JSON.stringify(payload)
+            data: JSON.stringify(data)
         });
     };
 
@@ -274,7 +284,7 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             // parametric command(s)
             data["parameters"] = {};
             for (var i = 0; i < command.input.length; i++) {
-                data["parameters"][command.input[i].parameter] = command.input[i].value;
+                data["parameters"][command.input[i].parameter] = command.input[i].value();
             }
         }
 
@@ -300,6 +310,10 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
         switch (customControl.type) {
             case "section":
                 return "customControls_sectionTemplate";
+            case "row":
+                return "customControls_rowTemplate";
+            case "section_row":
+                return "customControls_sectionRowTemplate";
             case "command":
             case "commands":
                 return "customControls_commandTemplate";
@@ -313,6 +327,18 @@ function ControlViewModel(loginStateViewModel, settingsViewModel) {
             default:
                 return "customControls_emptyTemplate";
         }
+    };
+
+    self.rowCss = function(customControl) {
+        var span = "span2";
+        var offset = "";
+        if (customControl.hasOwnProperty("width")) {
+            span = "span" + customControl.width;
+        }
+        if (customControl.hasOwnProperty("offset")) {
+            offset = "offset" + customControl.offset;
+        }
+        return span + " " + offset;
     };
 
     self.onStartup = function() {
