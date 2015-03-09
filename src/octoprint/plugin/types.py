@@ -1,4 +1,15 @@
 # coding=utf-8
+"""
+This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
+class, :class:`OctoPrintPlugin`.
+
+Please note that the plugin implementation types are documented in the section
+:ref:`Available plugin mixins <sec-plugins-mixins>`.
+
+.. autoclass:: OctoPrintPlugin
+
+"""
+
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -9,7 +20,55 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from .core import Plugin
 
 
-class StartupPlugin(Plugin):
+class OctoPrintPlugin(Plugin):
+	"""
+	The parent class of all OctoPrint plugin mixins.
+
+	.. attribute:: _plugin_manager
+
+	   The :class:`~octoprint.plugin.core.PluginManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _printer_profile_manager
+
+	   The :class:`~octoprint.printer.profile.PrinterProfileManager` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _event_bus
+
+	   The :class:`~octoprint.events.EventManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
+
+	.. attribute:: _analysis_queue
+
+	   The :class:`~octoprint.filemanager.analysis.AnalysisQueue` instance. Injected by the plugin core system upon
+	   initialization of the implementation.
+
+	.. attribute:: _slicing_manager
+
+	   The :class:`~octoprint.slicing.SlicingManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _file_manager
+
+	   The :class:`~octoprint.filemanager.FileManager` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _printer
+
+	   The :class:`~octoprint.printer.PrinterInterface` instance. Injected by the plugin core system upon initialization
+	   of the implementation.
+
+	.. attribute:: _app_session_manager
+
+	   The :class:`~octoprint.users.SessionManager` instance. Injected by the plugin core system upon initialization of
+	   the implementation.
+	"""
+
+	pass
+
+
+class StartupPlugin(OctoPrintPlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
@@ -37,7 +96,7 @@ class StartupPlugin(Plugin):
 		pass
 
 
-class ShutdownPlugin(Plugin):
+class ShutdownPlugin(OctoPrintPlugin):
 	"""
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
@@ -51,14 +110,14 @@ class ShutdownPlugin(Plugin):
 		pass
 
 
-class AssetPlugin(Plugin):
+class AssetPlugin(OctoPrintPlugin):
 	"""
 	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
 	the plugin.
 
 	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used by templates injected
-	through :class:`TemplatePlugin`s.
+	through a :class:`TemplatePlugin`.
 	"""
 
 	def get_asset_folder(self):
@@ -104,7 +163,7 @@ class AssetPlugin(Plugin):
 		return dict()
 
 
-class TemplatePlugin(Plugin):
+class TemplatePlugin(OctoPrintPlugin):
 	"""
 	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
 
@@ -201,6 +260,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of navbar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the navbar entry (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -238,6 +303,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of sidebar component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the sidebar container (``false``)
 		          or if a custom binding will be used by the plugin (``true``, default).
@@ -279,6 +350,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of tab component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default view model should be bound to the tab pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
@@ -320,6 +397,12 @@ class TemplatePlugin(Plugin):
 		        - Suffix to attach to the element ID of the injected template, will be ``_<index>`` if not provided and not
 		          the first template of the type, with ``index`` counting from 1 and increasing for each template of the same
 		          type.
+		      * - div
+		        - Id for the div containing the component. If not provided, defaults to ``plugin_<pluginname>`` plus
+		          the suffix if provided or required.
+		      * - replaces
+		        - Id of settings component this one replaces, might be either one of the core components or a component
+		          provided by another plugin. See :ref:`this section <sec-plugins-templates>` for more on replacing template components.
 		      * - custom_bindings
 		        - A boolean value indicating whether the default settings view model should be bound to the settings pane and link
 		          in the navigation (``false``) or if a custom binding will be used by the plugin (``true``, default).
@@ -384,7 +467,7 @@ class TemplatePlugin(Plugin):
 		return os.path.join(self._basefolder, "templates")
 
 
-class SimpleApiPlugin(Plugin):
+class SimpleApiPlugin(OctoPrintPlugin):
 	"""
 	Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
 	resource accepting JSON commands POSTed to it. This is the easy alternative for plugin's which don't need the
@@ -519,7 +602,7 @@ class SimpleApiPlugin(Plugin):
 		return None
 
 
-class BlueprintPlugin(Plugin):
+class BlueprintPlugin(OctoPrintPlugin):
 	"""
 	The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
 	be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
@@ -543,18 +626,18 @@ class BlueprintPlugin(Plugin):
 	               return flask.make_response("Expected a text to echo back.", 400)
 	           return flask.request.values["text"]
 
-	   __plugin_implementations__ = [MyPlugin()]
+	   __plugin_implementations__ = [MyBlueprintPlugin()]
 
 	Your blueprint will be published by OctoPrint under the base URL ``/plugin/<plugin identifier>/``, so the above
 	example of a plugin with the identifier "myblueprintplugin" would be reachable under
 	``/plugin/myblueprintplugin/echo``.
 
 	Just like with regular blueprints you'll be able to create URLs via ``url_for``, just use the prefix
-	``plugin.<plugin identifier>``, e.g.:
+	``plugin.<plugin identifier>.<method_name>``, e.g.:
 
 	.. code-block:: python
 
-	   flask.url_for("plugin.myblueprintplugin.echo") # will return "/plugin/myblueprintplugin/echo"
+	   flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
 	"""
 
@@ -622,7 +705,7 @@ class BlueprintPlugin(Plugin):
 		return True
 
 
-class SettingsPlugin(Plugin):
+class SettingsPlugin(OctoPrintPlugin):
 	"""
 	Including the ``SettingsPlugin`` mixin allows plugins to store and retrieve their own settings within OctoPrint's
 	configuration.
@@ -673,6 +756,11 @@ class SettingsPlugin(Plugin):
 
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.
+
+	.. attribute:: _settings
+
+	   The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
+	   the plugin core system upon initialization of the implementation.
 	"""
 
 	def on_settings_load(self):
@@ -727,7 +815,7 @@ class SettingsPlugin(Plugin):
 		return dict()
 
 
-class EventHandlerPlugin(Plugin):
+class EventHandlerPlugin(OctoPrintPlugin):
 	"""
 	The ``EventHandlerPlugin`` mixin allows OctoPrint plugins to react to any of :ref:`OctoPrint's events <sec-events>`.
 	OctoPrint will call the :func:`on_event` method for any event fired on its internal event bus, supplying the
@@ -750,7 +838,7 @@ class EventHandlerPlugin(Plugin):
 		pass
 
 
-class SlicerPlugin(Plugin):
+class SlicerPlugin(OctoPrintPlugin):
 	"""
 	Via the ``SlicerPlugin`` mixin plugins can add support for slicing engines to be used by OctoPrint.
 
@@ -811,10 +899,10 @@ class SlicerPlugin(Plugin):
 		``False`` (defaults to ``True``), an ``IOError`` should be raised.
 
 		:param string path: the path to which to save the profile
-		:param :class:`SlicingProfile` profile: the profile to save
+		:param SlicingProfile profile: the profile to save
 		:param bool allow_overwrite: whether to allow to overwrite an existing profile at the indicated path (``True``, default)
-		                             or not (``False``) - if a profile already exists on the path and this is ``False``
-		                             and :class:`IOError` should be raised
+		    or not (``False``) - if a profile already exists on the path and this is ``False``
+		    and :class:`IOError` should be raised
 		:param dict overrides: profile overrides to apply to the ``profile`` before saving it
 		"""
 		pass
@@ -857,7 +945,7 @@ class SlicerPlugin(Plugin):
 		pass
 
 
-class ProgressPlugin(Plugin):
+class ProgressPlugin(OctoPrintPlugin):
 	"""
 	Via the ``ProgressPlugin`` mixing plugins can let themselves be called upon progress in print jobs or slicing jobs,
 	limited to minimally 1% steps.
@@ -887,7 +975,7 @@ class ProgressPlugin(Plugin):
 		pass
 
 
-class AppPlugin(Plugin):
+class AppPlugin(OctoPrintPlugin):
 	def get_additional_apps(self):
 		return []
 
