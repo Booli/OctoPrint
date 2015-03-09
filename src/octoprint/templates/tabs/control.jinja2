@@ -106,9 +106,11 @@
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_sectionTemplate">
-    <h1 data-bind="text: name"></h1>
+    <div data-bind="attr: {id: name + '_section'}">
+        <h1 data-bind="text: name"></h1>
 
-    <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+        <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
+    </div>
 </script>
 <script type="text/html" id="customControls_rowTemplate">
     <div class="row-fluid custom_row">
