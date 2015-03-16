@@ -200,13 +200,13 @@ def index():
 
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isAdmin")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], header_addon="sidebar/files_header.jinja2"))
-	)
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign"))
+		)
 
 	# tabs
 
 	templates["tab"]["entries"] = dict(
+		status=(gettext("Status"), dict(template="tabs/status.jinja2", _div="status")),
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
@@ -229,13 +229,13 @@ def index():
 
 		section_features=(gettext("Features"), None),
 
-		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
-		webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
-		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
+		#features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
+		#webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
+		#api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
 
 		section_octoprint=(gettext("OctoPrint"), None),
 
-		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
+		#folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
 		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
 	)
@@ -278,7 +278,8 @@ def index():
 				else:
 					data = include[1]
 
-				key = "plugin_" + name + data["suffix"] if "suffix" in data else ""
+				suffix = data["suffix"] if "suffix" in data else ""
+				key = "plugin_" + name + suffix
 				if "replaces" in data:
 					key = data["replaces"]
 				templates[t]["entries"][key] = include
@@ -286,8 +287,8 @@ def index():
 	#~~ order internal templates and plugins
 
 	templates["navbar"]["order"] = ["settings", "systemmenu", "login"]
-	templates["sidebar"]["order"] = ["connection", "state", "files"]
-	templates["tab"]["order"] = ["temperature", "control", "gcodeviewer", "terminal", "timelapse"]
+	templates["sidebar"]["order"] = ["connection", "state"]
+	templates["tab"]["order"] = ["status", "temperature", "control", "gcodeviewer", "terminal", "timelapse"]
 	templates["settings"]["order"] = [
 		"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 		"section_features", "features", "webcam", "accesscontrol", "api",

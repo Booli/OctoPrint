@@ -1,0 +1,46 @@
+<div class="row">
+    <div class="accordion span4">
+        {% for key in templates.sidebar.order %}
+            {% set entry, data = templates.sidebar.entries[key] %}
+            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+            <div id="{{ data._div }}_wrapper"
+                 class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                 {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                 {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                    >
+                <div class="accordion-heading">
+                    <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
+                        {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
+                    </a>
+                    {% if "header_addon" in data %}
+                        {% include data.header_addon ignore missing %}
+                    {% endif %}
+                </div>
+                <div id="{{ data._div }}"
+                     class="accordion-body collapse in {% if "classes_content" in data %}{{ data.classes_content|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
+                     {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}"{% endif %}
+                        >
+                    <div class="accordion-inner">
+                        {% include data.template ignore missing %}
+                    </div>
+                </div>
+            </div>
+            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+        {% endfor %}
+    </div>
+    <div class="accordion span7">
+        <div id="files_wrapper" class="accordion-group">
+            <div class="accordion-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-target="#files">
+                    <i class="icon-list"></i>
+                </a>
+                {% include "sidebar/files_header.jinja2" %}
+            </div>
+            <div id="files" class="accordion-body collapse in overflow_visible">
+                <div class="accordion-inner">
+                    {% include "sidebar/files.jinja2" %}
+                </div>
+            </div>            
+        </div>
+    </div>
+</div>

@@ -62,9 +62,6 @@
         </div>
     </div>
 
-    <!-- Feed rate -->
-    <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
-    <button class="btn btn-block" style="width: 169px" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
 </div>
 <!-- Extrusion control panel -->
 <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
@@ -86,9 +83,7 @@
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
 
-        <!-- Flow rate -->
-        <input style="width: 100px" type="number" data-bind="slider: {min: 75, max: 125, step: 1, value: flowRate, tooltip: 'hide'}">
-        <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFlowRateCommand() }">{{ _('Flow rate:') }}<span data-bind="text: flowRate() + '%'"></span></button>
+
     </div>
 </div>
 <!-- General control panel -->
@@ -102,15 +97,13 @@
 </div>
 
 <!-- Container for custom controls -->
-<div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_sectionTemplate">
-    <div data-bind="attr: {id: name + '_section'}">
-        <h1 data-bind="text: name"></h1>
+    <h1 data-bind="text: name"></h1>
 
-        <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
-    </div>
+    <div class="custom_section" data-bind="template: { name: $root.displayMode, foreach: children }"></div>
 </script>
 <script type="text/html" id="customControls_rowTemplate">
     <div class="row-fluid custom_row">
@@ -130,7 +123,7 @@
 </script>
 <script type="text/html" id="customControls_commandTemplate">
     <form class="form-inline custom_command">
-        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+        <button class="btn btn-block control-box" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
     </form>
 </script>
 <script type="text/html" id="customControls_feedbackCommandTemplate">
@@ -159,3 +152,14 @@
 </script>
 <script type="text/html" id="customControls_emptyTemplate"><div></div></script>
 <!-- End of templates for custom controls -->
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+    <h1>{{ _('During Print') }}</h1>
+    <div>
+    <!-- Feed rate -->
+        <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
+        <button class="btn btn-block control-box" style="width: 169px" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
+    <!-- Flow rate -->
+        <input style="width: 153px" type="number" data-bind="slider: {min: 75, max: 125, step: 1, value: flowRate, tooltip: 'hide'}">
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFlowRateCommand() }">{{ _('Flow rate:') }}<span data-bind="text: flowRate() + '%'"></span></button>
+    </div>
+</div>

@@ -131,17 +131,17 @@ class PrinterProfileManager(object):
 	default = dict(
 		id = "_default",
 		name = "Default",
-		model = "Generic RepRap Printer",
+		model = "Xeed",
 		color = "default",
 		volume=dict(
-			width = 200,
-			depth = 200,
+			width = 235,
+			depth = 215,
 			height = 200,
 			formFactor = BedTypes.RECTANGULAR,
 		),
 		heatedBed = False,
 		extruder=dict(
-			count = 1,
+			count = 2,
 			offsets = [
 				(0, 0)
 			],
@@ -150,7 +150,7 @@ class PrinterProfileManager(object):
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
 			y = dict(speed=6000, inverted=False),
-			z = dict(speed=200, inverted=False),
+			z = dict(speed=200, inverted=True),
 			e = dict(speed=300, inverted=False)
 		)
 	)

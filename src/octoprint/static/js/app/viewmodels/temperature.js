@@ -20,7 +20,7 @@ $(function() {
         self.tools = ko.observableArray([]);
         self.hasBed = ko.observable(true);
         self.bedTemp = self._createToolEntry();
-        self.bedTemp["name"](gettext("Bed"));
+        self.bedTemp["name"](gettext("Chamber"));
         self.bedTemp["key"]("bed");
 
         self.isErrorOrClosed = ko.observable(undefined);
@@ -66,9 +66,12 @@ $(function() {
                 tools[0]["name"](gettext("Hotend"));
                 tools[0]["key"]("tool0");
             }
+            // Xeed hack
+            tools[0]["name"](gettext("Right"));
+            tools[1]["name"](gettext("Left"))
 
             // print bed
-            heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
+            heaterOptions["bed"] = {name: gettext("Chamber"), color: "blue"};
 
             // write back
             self.heaterOptions(heaterOptions);
