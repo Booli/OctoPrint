@@ -205,6 +205,8 @@ default_settings = {
 	"scripts": {
 		"gcode": {
 			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\nM140 S0\n\n;disable fan\nM106 S0",
+			"beforePrintStarted": "",
+			"afterPrinterConnected": "",
 			"snippets": {
 				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}"
 			}
