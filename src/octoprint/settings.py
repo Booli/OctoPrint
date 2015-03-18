@@ -71,13 +71,13 @@ def settings(init=False, basedir=None, configfile=None):
 
 default_settings = {
 	"serial": {
-		"port": None,
-		"baudrate": None,
+		"port": "/dev/ttyUSB0",
+		"baudrate": 115200,
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
-			"connection": 10,
+			"connection": 20,
 			"communication": 30,
 			"temperature": 5,
 			"sdStatus": 1
@@ -121,7 +121,7 @@ default_settings = {
 		}
 	},
 	"gcodeViewer": {
-		"enabled": True,
+		"enabled": False,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
@@ -132,11 +132,11 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
-		"sdSupport": True,
+		"sdSupport": False,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
-		"keyboardControl": True
+		"keyboardControl": False
 	},
 	"folder": {
 		"uploads": None,
@@ -152,8 +152,8 @@ default_settings = {
 	},
 	"temperature": {
 		"profiles": [
-			{"name": "ABS", "extruder" : 210, "bed" : 100 },
-			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+			{"name": "ABS", "extruder" : 240, "bed" : 80 },
+			{"name": "PLA", "extruder" : 210, "bed" : 30 }
 		]
 	},
 	"printerProfiles": {

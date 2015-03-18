@@ -132,14 +132,14 @@ class PrinterProfileManager(object):
 		id = "_default",
 		name = "Default",
 		model = "Xeed",
-		color = "default",
+		color = "green",
 		volume=dict(
 			width = 235,
 			depth = 215,
 			height = 200,
 			formFactor = BedTypes.RECTANGULAR,
 		),
-		heatedBed = False,
+		heatedBed = True,
 		extruder=dict(
 			count = 2,
 			offsets = [

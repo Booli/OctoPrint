@@ -1,0 +1,14 @@
+#control .box {
+	height: 60px;
+	width: 60px;
+	font-size: 2em;
+}
+
+#control .control-box {
+	height: 40px;
+	font-size: 1.2em;
+}
+
+#control form{
+	margin: 0 0 0 0;
+}
