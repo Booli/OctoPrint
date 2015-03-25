@@ -9,6 +9,17 @@ $(function() {
 
     self.actionTriggerTemplate = ko.observable(undefined);
 
+    self.timer = ko.observable(0);
+    self.minutes = ko.computed( function() {
+      var minute = Math.floor(self.timer() / 60) % 60;
+      return (minute < 10) ? "0" + minute : minute;
+    }, self);
+    self.seconds = ko.computed( function() {
+      var second = self.timer() % 60;
+      return (second < 10) ? "0"+second : second;
+    }, self);
+
+
     self.showActionTriggerDialog = function (data) {
       var actionTriggerDialog = $("#action_trigger_dialog");
       var actionTriggerDialogAck = $(".action_trigger_dialog_acknowledge", actionTriggerDialog);
@@ -20,6 +31,9 @@ $(function() {
         e.preventDefault();
         $("#action_trigger_dialog").modal("hide");
         self.showControls();
+        if (self.actionTriggerTemplate("filament")){
+          self.sendApi("cancel_timer");
+        }
         //prob going to do some stuff here huh.
       });
       actionTriggerDialog.modal({
@@ -27,13 +41,7 @@ $(function() {
         backdrop:'static',
         keyboard: false
       });
-
-
     };
-
-    //$('#action_trigger_dialog').on('hidden', function(){
-    //  $('#action_trigger_dialog').data('modal', null);
-    //});
 
     self.onBeforeBinding = function() {
       self.settings = self.settingsViewModel.settings;
@@ -67,9 +75,18 @@ $(function() {
           $("#action_trigger_dialog").modal("hide");
           break;
 
-
         //Do nothing
       };
+    };
+
+    self.sendApi = function(command) {
+      $.ajax({
+          url: API_BASEURL + "plugin/actiontrigger",
+          type: "POST",
+          dataType: "json",
+          contentType: "application/json; charset=UTF-8",
+          data: JSON.stringify({command: command})
+      });
     };
 
   };

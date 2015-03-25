@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import flask
 import logging
 import time
+import threading
 
 import octoprint.plugin
 import octoprint.settings
@@ -33,10 +34,15 @@ def __plugin_init__():
 class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 						  octoprint.plugin.AssetPlugin,
 						  octoprint.plugin.SettingsPlugin,
-						  octoprint.plugin.EventHandlerPlugin):
+						  octoprint.plugin.EventHandlerPlugin,
+						  octoprint.plugin.SimpleApiPlugin):
 	
 		def __init__(self):
 			self.filament_action = False
+			self.timer = None
+
+		##def initialize(self):
+		##	self.timer = threading.Timer(3, self.shutdown_heaters)
 
 		##~~ TemplatePlugin
 		def get_template_configs(self):
@@ -64,6 +70,19 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 				if "action_filament" in data:
 						s.set_boolean(["action_filament"], data["action_filament"])
 
+		def get_api_commands(self):
+				return dict(
+						reset_timer=[],
+						cancel_timer=[]
+				) 
+
+		def on_api_command(self, command, data):
+				import flask
+				if command == "cancel_timer":
+					self.timer.cancel()
+				elif command == "reset_timer":
+					pass
+
 
 		##~~ ActionTriggerPlugin
 		def hook_actiontrigger(self, comm, line, action_trigger):
@@ -83,6 +102,8 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 						comm.setPause(True)
 						self._printer.home("x")
 						self.filament_action = True
+						self.timer = threading.Timer(60, self.shutdown_heaters)
+						self.timer.start()
 
 		# Send trigger to front end
 		def _send_client_message(self, message_type, data=None):
@@ -92,3 +113,11 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 		def on_event(self, event, payload):
 			if event == "PrintResumed" or event == "PrintStarted":
 				self.filament_action = False
+
+		def shutdown_heaters(self):
+			self._send_client_message("shutdown_heaters", dict(time=""))
+			self._printer.set_temperature("tool0", 0.0)
+			self._printer.set_temperature("tool1", 0.0)
+			self._printer.set_temperature("bed", 0.0)
+
+

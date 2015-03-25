@@ -10,7 +10,6 @@
 <!-- Door -->
 <script type="text/html" id="door_open">
   <div class="modal-body">
-      <!-- Message variable goes here with extra stuff might have to split into seperate dialogs being called -->
       <strong>The Xeed door is open, for safety reason we have paused the print!</strong> </br>
       To resume the print please close the door.
       To disable this feature go to Settings -> ActionTrigger and untick "Door detection".
@@ -23,11 +22,11 @@
 <!-- Filament -->
 <script type="text/html" id="filament">
   <div class="modal-body">
-    <!-- Message variable goes here with extra stuff might have to split into seperate dialogs being called -->
     Filament stop has been detected! Check if there is enough filament on the spool and that the Xeed can extrude freely.
-    Use the Control tab to load a new roll filament if needed. Resume print through the status panel.
+    Use the Control tab to load a new roll filament if needed. Resume print through the status panel.</br>
+    Heaters will be shut off in: <span data-bind="text: $root.minutes"></span>:<span data-bind="text: $root.seconds"></span>.
   </div>
   <div class="modal-footer">
-    <a href="#" class="btn btn-warning action_trigger_dialog_acknowledge" aria-hidden="true">{{ _('Proceed to controls') }}</a>
+    <button class="btn btn-warning action_trigger_dialog_acknowledge" aria-hidden="true" data-bind="click: function (){$root.sendApi('cancel_timer')}">{{ _('Proceed to controls') }}</button>
   </div>
 </script>
