@@ -30,9 +30,35 @@ class SettingsTestCase(unittest.TestCase):
 			some_int_key=1,
 			some_float_key=2.5,
 			some_boolean_key=True,
+<<<<<<< HEAD
 		)
 
 		self.plugin_settings = octoprint.plugin.PluginSettings(self.settings, self.plugin_key, defaults=self.defaults)
+=======
+			preprocessed=dict(
+				get="PreProcessed",
+				set="PreProcessed"
+			)
+		)
+
+		self.get_preprocessors = dict(
+			preprocessed=dict(
+				get=lambda x: x.upper()
+			)
+		)
+
+		self.set_preprocessors = dict(
+			preprocessed=dict(
+				set=lambda x: x.lower()
+			)
+		)
+
+		self.plugin_settings = octoprint.plugin.PluginSettings(self.settings,
+		                                                       self.plugin_key,
+		                                                       defaults=self.defaults,
+		                                                       get_preprocessors=self.get_preprocessors,
+		                                                       set_preprocessors=self.set_preprocessors)
+>>>>>>> upstream/devel
 
 	@data(
 		("get", (["some_raw_key",],), dict(), "get"),
@@ -53,7 +79,11 @@ class SettingsTestCase(unittest.TestCase):
 		forwarded_method = getattr(self.settings, forwarded)
 		forwarded_args = (["plugins", self.plugin_key] + getter_args[0],)
 		forwarded_kwargs = getter_kwargs
+<<<<<<< HEAD
 		forwarded_kwargs.update(dict(defaults=dict(plugins=dict(test_plugin=self.defaults))))
+=======
+		forwarded_kwargs.update(dict(defaults=dict(plugins=dict(test_plugin=self.defaults)), preprocessors=dict(plugins=dict(test_plugin=self.get_preprocessors))))
+>>>>>>> upstream/devel
 		forwarded_method.assert_called_once_with(*forwarded_args, **forwarded_kwargs)
 
 	@data(
@@ -90,7 +120,11 @@ class SettingsTestCase(unittest.TestCase):
 			self.assertTrue(callable(method))
 			method(["some_raw_key"])
 
+<<<<<<< HEAD
 			called_method.assert_called_once_with(["plugins", self.plugin_key, "some_raw_key"], defaults=dict(plugins=dict(test_plugin=self.defaults)))
+=======
+			called_method.assert_called_once_with(["plugins", self.plugin_key, "some_raw_key"], defaults=dict(plugins=dict(test_plugin=self.defaults)), preprocessors=dict(plugins=dict(test_plugin=self.get_preprocessors)))
+>>>>>>> upstream/devel
 
 			self.assertEquals(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
@@ -138,7 +172,11 @@ class SettingsTestCase(unittest.TestCase):
 		forwarded_method = getattr(self.settings, forwarded)
 		forwarded_args = (["plugins", self.plugin_key] + setter_args[0], setter_args[1])
 		forwarded_kwargs = setter_kwargs
+<<<<<<< HEAD
 		forwarded_kwargs.update(dict(defaults=dict(plugins=dict(test_plugin=self.defaults))))
+=======
+		forwarded_kwargs.update(dict(defaults=dict(plugins=dict(test_plugin=self.defaults)), preprocessors=dict(plugins=dict(test_plugin=self.set_preprocessors))))
+>>>>>>> upstream/devel
 		forwarded_method.assert_called_once_with(*forwarded_args, **forwarded_kwargs)
 
 	@data(
@@ -176,7 +214,11 @@ class SettingsTestCase(unittest.TestCase):
 			self.assertTrue(callable(method))
 			method(["some_raw_key"], value)
 
+<<<<<<< HEAD
 			called_method.assert_called_once_with(["plugins", self.plugin_key, "some_raw_key"], value, defaults=dict(plugins=dict(test_plugin=self.defaults)))
+=======
+			called_method.assert_called_once_with(["plugins", self.plugin_key, "some_raw_key"], value, defaults=dict(plugins=dict(test_plugin=self.defaults)), preprocessors=dict(plugins=dict(test_plugin=self.set_preprocessors)))
+>>>>>>> upstream/devel
 
 			self.assertEquals(1, len(w))
 			self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
@@ -255,4 +297,8 @@ class SettingsTestCase(unittest.TestCase):
 		try:
 			self.plugin_settings.some_method("some_parameter")
 		except AttributeError as e:
+<<<<<<< HEAD
 			self.assertTrue("Mock object has no attribute 'some_method'" in str(e))
+=======
+			self.assertTrue("Mock object has no attribute 'some_method'" in str(e))
+>>>>>>> upstream/devel

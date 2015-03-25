@@ -112,6 +112,7 @@ def get_formatted_size(num):
 def is_allowed_file(filename, extensions):
 	"""
 	Determines if the provided ``filename`` has one of the supplied ``extensions``. The check is done case-insensitive.
+<<<<<<< HEAD
 
 	Arguments:
 	    filename (string): The file name to check against the extensions.
@@ -131,6 +132,27 @@ def get_formatted_timedelta(d):
 	Arguments:
 	    d (datetime.timedelta): The timedelta instance to format
 
+=======
+
+	Arguments:
+	    filename (string): The file name to check against the extensions.
+	    extensions (list): The extensions to check against, a list of strings
+
+	Return:
+	    boolean: True if the file name's extension matches one of the allowed extensions, False otherwise.
+	"""
+
+	return "." in filename and filename.rsplit(".", 1)[1].lower() in map(str.lower, extensions)
+
+
+def get_formatted_timedelta(d):
+	"""
+	Formats a timedelta instance as "HH:MM:ss" and returns the resulting string.
+
+	Arguments:
+	    d (datetime.timedelta): The timedelta instance to format
+
+>>>>>>> upstream/devel
 	Returns:
 	    string: The timedelta formatted as "HH:MM:ss"
 	"""
@@ -255,10 +277,70 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 	filename, ext = os.path.splitext(origin)
 	if extension is None:
 		extension = ext
+<<<<<<< HEAD
+
+	return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
+=======
 
 	return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
 
 
+def find_collision_free_name(filename, extension, existing_filenames, max_power=2):
+	"""
+	Tries to find a collision free translation of "<filename>.<extension>" to the 8.3 DOS compatible format,
+	preventing collisions with any of the ``existing_filenames``.
+
+	First strips all of ``."/\\[]:;=,`` from the filename and extensions, converts them to lower case and truncates
+	the ``extension`` to a maximum length of 3 characters.
+
+	If the filename is already equal or less than 8 characters in length after that procedure and "<filename>.<extension>"
+	are not contained in the ``existing_files``, that concatenation will be returned as the result.
+
+	If not, the following algorithm will be applied to try to find a collision free name::
+
+	    set counter := power := 1
+	    while counter < 10^max_power:
+	        set truncated := substr(filename, 0, 6 - power + 1) + "~" + counter
+	        set result := "<truncated>.<extension>"
+	        if result is collision free:
+	            return result
+	        counter++
+	        if counter >= 10 ** power:
+	            power++
+	    raise ValueError
+
+	This will basically -- for a given original filename of ``some_filename`` and an extension of ``gco`` -- iterate
+	through names of the format ``some_f~1.gco``, ``some_f~2.gco``, ..., ``some_~10.gco``, ``some_~11.gco``, ...,
+	``<prefix>~<n>.gco`` for ``n`` less than 10 ^ ``max_power``, returning as soon as one is found that is not colliding.
+
+	Arguments:
+	    filename (string): The filename without the extension to convert to 8.3.
+	    extension (string): The extension to convert to 8.3 -- will be truncated to 3 characters if it's longer than
+	        that.
+	    existing_filenames (list): A list of existing filenames to prevent name collisions with.
+	    max_power (int): Limits the possible attempts of generating a collision free name to 10 ^ ``max_power``
+	        variations. Defaults to 2, so the name generation will maximally reach ``<name>~99.<ext>`` before
+	        aborting and raising an exception.
+
+	Returns:
+	    string: A 8.3 representation of the provided original filename, ensured to not collide with the provided
+	        ``existing_filenames``
+
+	Raises:
+	    ValueError: No collision free name could be found.
+	"""
+
+	# TODO unit test!
+
+	def make_valid(text):
+		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
+>>>>>>> upstream/devel
+
+	filename = make_valid(filename)
+	extension = make_valid(extension)
+	extension = extension[:3] if len(extension) > 3 else extension
+
+<<<<<<< HEAD
 def find_collision_free_name(filename, extension, existing_filenames, max_power=2):
 	"""
 	Tries to find a collision free translation of "<filename>.<extension>" to the 8.3 DOS compatible format,
@@ -313,6 +395,8 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
+=======
+>>>>>>> upstream/devel
 	if len(filename) <= 8 and not filename + "." + extension in existing_filenames:
 		# early exit
 		return filename + "." + extension
@@ -413,6 +497,7 @@ def filter_non_ascii(line):
 def dict_merge(a, b):
 	"""
 	Recursively deep-merges two dictionaries.
+<<<<<<< HEAD
 
 	Taken from https://www.xormedia.com/recursively-merge-dictionaries-in-python/
 
@@ -420,6 +505,15 @@ def dict_merge(a, b):
 	    a (dict): The dictionary to merge ``b`` into
 	    b (dict): The dictionary to merge into ``a``
 
+=======
+
+	Taken from https://www.xormedia.com/recursively-merge-dictionaries-in-python/
+
+	Arguments:
+	    a (dict): The dictionary to merge ``b`` into
+	    b (dict): The dictionary to merge into ``a``
+
+>>>>>>> upstream/devel
 	Returns:
 	    dict: ``b`` deep-merged into ``a``
 	"""
@@ -534,6 +628,7 @@ def address_for_client(host, port):
 		except:
 			continue
 
+<<<<<<< HEAD
 class CountedEvent(object):
 
 	def __init__(self, value=0, max=None, name=None):
@@ -547,6 +642,128 @@ class CountedEvent(object):
 
 		self._internal_set(value)
 
+=======
+class RepeatedTimer(threading.Thread):
+	"""
+	This class represents an action that should be run repeatedly in an interval. It is similar to python's
+	own :class:`threading.Timer` class, but instead of only running once the ``function`` will be run again and again,
+	sleeping the stated ``interval`` in between.
+
+	RepeatedTimers are started, as with threads, by calling their ``start()`` method. The timer can be stopped (in
+	between runs) by calling the :func:`cancel` method. The interval the time waited before execution of a loop may
+	not be exactly the same as the interval specified by the user.
+
+	For example:
+
+	.. code-block:: python
+
+	   def hello():
+	       print("Hello World!")
+
+	   t = RepeatedTimer(1.0, hello)
+	   t.start() # prints "Hello World!" every second
+
+	Another example with dynamic interval and loop condition:
+
+	.. code-block:: python
+
+	   count = 0
+	   maximum = 5
+	   factor = 1
+
+	   def interval():
+	       global count
+	       global factor
+	       return count * factor
+
+	   def condition():
+	       global count
+	       global maximum
+	       return count <= maximum
+
+	   def hello():
+	       print("Hello World!")
+
+	       global count
+	       count += 1
+
+	   t = RepeatedTimer(interval, hello, run_first=True, condition=condition)
+	   t.start() # prints "Hello World!" 5 times, printing the first one
+	             # directly, then waiting 1, 2, 3, 4s in between (adaptive interval)
+
+	Arguments:
+	    interval (float or callable): The interval between each ``function`` call, in seconds. Can also be a callable
+	        returning the interval to use, in case the interval is not static.
+	    function (callable): The function to call.
+	    args (list or tuple): The arguments for the ``function`` call. Defaults to an empty list.
+	    kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
+	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
+	        If set to False (the default), the function will be run for the first time *after* the first wait period.
+	    condition (callable): Condition that needs to be True for loop to continue. Defaults to ``lambda: True``.
+	"""
+
+	def __init__(self, interval, function, args=None, kwargs=None, run_first=False, condition=None):
+		threading.Thread.__init__(self)
+
+		if args is None:
+			args = []
+		if kwargs is None:
+			kwargs = dict()
+		if condition is None:
+			condition = lambda: True
+
+		if not callable(interval):
+			self.interval = lambda: interval
+		else:
+			self.interval = interval
+
+		self.function = function
+		self.finished = threading.Event()
+		self.args = args
+		self.kwargs = kwargs
+		self.run_first = run_first
+		self.condition = condition
+
+	def cancel(self):
+		self.finished.set()
+
+	def run(self):
+		while self.condition():
+			if self.run_first:
+				# if we are to run the function BEFORE waiting for the first time
+				self.function(*self.args, **self.kwargs)
+
+				# make sure our condition is still met before running into the downtime
+				if not self.condition():
+					break
+
+			# wait, but break if we are cancelled
+			self.finished.wait(self.interval())
+			if self.finished.is_set():
+				break
+
+			if not self.run_first:
+				# if we are to run the function AFTER waiting for the first time
+				self.function(*self.args, **self.kwargs)
+
+		# make sure we set our finished event so we can detect that the loop was finished
+		self.finished.set()
+
+
+class CountedEvent(object):
+
+	def __init__(self, value=0, max=None, name=None):
+		logger_name = __name__ + ".CountedEvent" + (".{name}".format(name=name) if name is not None else "")
+		self._logger = logging.getLogger(logger_name)
+
+		self._counter = 0
+		self._max = max
+		self._mutex = threading.Lock()
+		self._event = threading.Event()
+
+		self._internal_set(value)
+
+>>>>>>> upstream/devel
 	def set(self):
 		with self._mutex:
 			self._internal_set(self._counter + 1)
