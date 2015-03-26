@@ -13,10 +13,7 @@ $(function() {
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
-<<<<<<< HEAD
-=======
         self.appearance_defaultLanguage = ko.observable();
->>>>>>> upstream/devel
 
         self.settingsDialog = undefined;
 
@@ -57,15 +54,12 @@ $(function() {
             }
         };
 
-<<<<<<< HEAD
-=======
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
         })));
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
->>>>>>> upstream/devel
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
         self.webcam_streamUrl = ko.observable(undefined);
@@ -98,10 +92,7 @@ $(function() {
         self.serial_timeoutTemperature = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
-<<<<<<< HEAD
-=======
         self.serial_additionalPorts = ko.observable(undefined);
->>>>>>> upstream/devel
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -204,13 +195,10 @@ $(function() {
             self.appearance_name(response.appearance.name);
             self.appearance_color(response.appearance.color);
             self.appearance_colorTransparent(response.appearance.colorTransparent);
-<<<<<<< HEAD
-=======
             self.appearance_defaultLanguage("_default");
             if (_.includes(self.locale_languages, response.appearance.defaultLanguage)) {
                 self.appearance_defaultLanguage(response.appearance.defaultLanguage);
             }
->>>>>>> upstream/devel
 
             self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
 
@@ -244,10 +232,7 @@ $(function() {
             self.serial_timeoutTemperature(response.serial.timeoutTemperature);
             self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
             self.serial_log(response.serial.log);
-<<<<<<< HEAD
-=======
             self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
->>>>>>> upstream/devel
 
             self.folder_uploads(response.folder.uploads);
             self.folder_timelapse(response.folder.timelapse);
@@ -283,12 +268,8 @@ $(function() {
                 "appearance" : {
                     "name": self.appearance_name(),
                     "color": self.appearance_color(),
-<<<<<<< HEAD
-                    "colorTransparent": self.appearance_colorTransparent()
-=======
                     "colorTransparent": self.appearance_colorTransparent(),
                     "defaultLanguage": self.appearance_defaultLanguage()
->>>>>>> upstream/devel
                 },
                 "printer": {
                     "defaultExtrusionLength": self.printer_defaultExtrusionLength()
@@ -323,9 +304,6 @@ $(function() {
                     "timeoutCommunication": self.serial_timeoutCommunication(),
                     "timeoutTemperature": self.serial_timeoutTemperature(),
                     "timeoutSdStatus": self.serial_timeoutSdStatus(),
-<<<<<<< HEAD
-                    "log": self.serial_log()
-=======
                     "log": self.serial_log(),
                     "additionalPorts": _.filter(
                         _.map(
@@ -334,7 +312,6 @@ $(function() {
                         ),
                         function(item) { return item && !_.startsWith(item, "#"); }
                     )
->>>>>>> upstream/devel
                 },
                 "folder": {
                     "uploads": self.folder_uploads(),
@@ -370,11 +347,7 @@ $(function() {
                 data: JSON.stringify(data),
                 success: function(response) {
                     self.fromResponse(response);
-<<<<<<< HEAD
-                    $("#settings_dialog").modal("hide");
-=======
                     self.settingsDialog.modal("hide");
->>>>>>> upstream/devel
                 }
             });
         };
