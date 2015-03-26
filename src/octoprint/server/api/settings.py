@@ -39,12 +39,8 @@ def getSettings():
 		"appearance": {
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
-<<<<<<< HEAD
-			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"])
-=======
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
 			"defaultLanguage": s.get(["appearance", "defaultLanguage"])
->>>>>>> upstream/devel
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -155,10 +151,7 @@ def setSettings():
 		if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
 		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
-<<<<<<< HEAD
-=======
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
->>>>>>> upstream/devel
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])

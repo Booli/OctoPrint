@@ -1,6 +1,4 @@
 # coding=utf-8
-<<<<<<< HEAD
-=======
 """
 Slicing related exceptions.
 
@@ -28,7 +26,6 @@ Slicing related exceptions.
 
 """
 
->>>>>>> upstream/devel
 from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -37,14 +34,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 class SlicingException(BaseException):
-<<<<<<< HEAD
-	pass
-
-class SlicingCancelled(SlicingException):
-	pass
-
-class SlicerException(SlicingException):
-=======
 	"""
 	Base exception of all slicing related exceptions.
 	"""
@@ -64,28 +53,19 @@ class SlicerException(SlicingException):
 
 	   Identifier of the slicer for which the exception was raised.
 	"""
->>>>>>> upstream/devel
 	def __init__(self, slicer, *args, **kwargs):
 		super(SlicingException, self).__init__(*args, **kwargs)
 		self.slicer = slicer
 
 class SlicerNotConfigured(SlicerException):
-<<<<<<< HEAD
-=======
 	"""
 	Raised if a slicer is not yet configured but must be configured to proceed.
 	"""
->>>>>>> upstream/devel
 	def __init__(self, slicer, *args, **kwargs):
 		super(SlicerException, self).__init__(slicer, *args, **kwargs)
 		self.message = "Slicer not configured: {slicer}".format(slicer=slicer)
 
 class UnknownSlicer(SlicerException):
-<<<<<<< HEAD
-	def __init__(self, slicer, *args, **kwargs):
-		super(SlicerException, self).__init__(slicer, *args, **kwargs)
-		self.message = "No such slicer: {slicer}".format(slicer=slicer)
-=======
 	"""
 	Raised if a slicer is unknown.
 	"""
@@ -125,4 +105,3 @@ class ProfileAlreadyExists(ProfileException):
 	def __init__(self, slicer, profile, *args, **kwargs):
 		super(ProfileException, self).__init__(slicer, profile, *args, **kwargs)
 		self.message = "Profile {profile} for slicer {slicer} already exists".format(profile=profile, slicer=slicer)
->>>>>>> upstream/devel

@@ -14,11 +14,7 @@ from octoprint.server.api import api, NO_CONTENT
 
 from octoprint.settings import settings as s, valid_boolean_trues
 
-<<<<<<< HEAD
-from octoprint.slicing import SlicerNotConfigured
-=======
 from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile
->>>>>>> upstream/devel
 
 
 @api.route("/slicing", methods=["GET"])
@@ -32,16 +28,6 @@ def slicingListAll():
 
 	result = dict()
 	for slicer in slicers:
-<<<<<<< HEAD
-		slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
-		result[slicer] = dict(
-			key=slicer,
-			displayName=slicer_impl.get_slicer_properties()["name"],
-			default=default_slicer == slicer,
-			configured = slicer_impl.is_slicer_configured(),
-			profiles=_getSlicingProfilesData(slicer)
-		)
-=======
 		try:
 			slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
 			result[slicer] = dict(
@@ -54,7 +40,6 @@ def slicingListAll():
 		except (UnknownSlicer, SlicerNotConfigured):
 			# this should never happen
 			pass
->>>>>>> upstream/devel
 
 	return jsonify(result)
 
@@ -64,20 +49,10 @@ def slicingListSlicerProfiles(slicer):
 	if "configured" in request.values and request.values["configured"] in valid_boolean_trues:
 		configured = True
 
-<<<<<<< HEAD
-	configured = False
-	if "configured" in request.values and request.values["configured"] in valid_boolean_trues:
-		if not slicer in slicingManager.configured_slicers:
-			return make_response("Unknown slicer {slicer}".format(**locals()), 404)
-		configured = True
-
-	return jsonify(_getSlicingProfilesData(slicer, require_configured=configured))
-=======
 	try:
 		return jsonify(_getSlicingProfilesData(slicer, require_configured=configured))
 	except (UnknownSlicer, SlicerNotConfigured):
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
->>>>>>> upstream/devel
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
 def slicingGetSlicerProfile(slicer, name):
@@ -176,14 +151,7 @@ def slicingDelSlicerProfile(slicer, name):
 	return NO_CONTENT
 
 def _getSlicingProfilesData(slicer, require_configured=False):
-<<<<<<< HEAD
-	try:
-		profiles = slicingManager.all_profiles(slicer, require_configured=require_configured)
-	except SlicerNotConfigured:
-		return dict()
-=======
 	profiles = slicingManager.all_profiles(slicer, require_configured=require_configured)
->>>>>>> upstream/devel
 
 	result = dict()
 	for name, profile in profiles.items():

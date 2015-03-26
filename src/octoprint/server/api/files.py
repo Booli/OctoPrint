@@ -378,26 +378,6 @@ def gcodeFileCommand(filename, target):
 					filenameToSelect = fileManager.path_on_disk(target, gcode_name)
 				printer.select_file(filenameToSelect, sd, print_after_slicing)
 
-<<<<<<< HEAD
-		ok, result = fileManager.slice(slicer, target, filename, target, gcode_name,
-		                               profile=profile,
-		                               printer_profile_id=printerProfile,
-		                               position=position,
-		                               overrides=overrides,
-		                               callback=slicing_done,
-		                               callback_args=(target, gcode_name, select_after_slicing, print_after_slicing))
-
-		if ok:
-			files = {}
-			location = url_for(".readGcodeFile", target=target, filename=gcode_name, _external=True)
-			result = {
-				"name": gcode_name,
-				"origin": FileDestinations.LOCAL,
-				"refs": {
-					"resource": location,
-					"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + gcode_name
-				}
-=======
 		try:
 			fileManager.slice(slicer, target, filename, target, gcode_name,
 			                  profile=profile,
@@ -417,7 +397,6 @@ def gcodeFileCommand(filename, target):
 			"refs": {
 				"resource": location,
 				"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + gcode_name
->>>>>>> upstream/devel
 			}
 		}
 
