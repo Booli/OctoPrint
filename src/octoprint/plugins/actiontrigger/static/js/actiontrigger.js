@@ -8,6 +8,7 @@ $(function() {
     self.settingsViewModel = parameters[3];
 
     self.actionTriggerTemplate = ko.observable(undefined);
+    self.heatersOff = ko.observable(undefined);
 
     self.timer = ko.observable(0);
     self.minutes = ko.computed( function() {
@@ -65,13 +66,20 @@ $(function() {
           messageData.title = "Attention! Filament stop detected!";
           self.actionTriggerTemplate(messageType);
           self.showActionTriggerDialog(messageData);
+          self.heatersOff(false);
+          break;
+        case "update_timer":
+          self.timer(messageData.timer);
+          if (messageData.timer == 0) {
+            self.heatersOff(true);
+          }
           break;
         case "door_open":
           messageData.title = "Attention! Door is open!";
           self.actionTriggerTemplate(messageType);
           self.showActionTriggerDialog(messageData);
           break;
-        case "door_closed":
+        case "close_dialog":
           $("#action_trigger_dialog").modal("hide");
           break;
 

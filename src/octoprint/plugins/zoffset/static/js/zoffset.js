@@ -17,10 +17,10 @@ $(function() {
         self.getAdditionalControls = function() {
             return [
                 { name: "Xeed", type: "section", children: [
-                    { name: "Set zOffset", type: "command", javascript: self.startZOffset },
-                    {type: "command", command: "G32", name: "Level bed", confirm: "Do you want to level the bed?"},
-                    {type: "commands", commands: ["G91", "G1 E1200 F3000", "G1 E300 F200", "G90"], name: "Quick load", confirm: "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
-                    {type: "commands", commands: ["G91", "G1 E-50 F200", "G1 E-1200 F3000", "G1 E-250 F3000", "G90"], name: "Quick unload", confirm: "Do you want to unload filament? Make sure you are ready to roll up the filament."}
+                    {name: "Set zOffset", javascript: self.startZOffset },
+                    {name: "Level bed", command: "G32", confirm: "Do you want to level the bed?"},
+                    {name: "Quick load", commands: ["G91", "G1 E1200 F3000", "G1 E300 F200", "G90"], confirm: "Do you want to load filament? Make sure the filament is loaded correctly in the bottom drawer."},
+                    {name: "Quick unload", commands: ["G91", "G1 E-50 F200", "G1 E-1200 F3000", "G1 E-250 F3000", "G90"], confirm: "Do you want to unload filament? Make sure you are ready to roll up the filament."}
                 ]}
             ];
         };

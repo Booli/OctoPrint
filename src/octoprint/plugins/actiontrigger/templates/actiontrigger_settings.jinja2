@@ -17,4 +17,10 @@
       <input type="checkbox" data-bind="checked: settings.plugins.actiontrigger.action_filament"> {{ _('Filament detection') }}
     </label>
   </div>
+  <strong>Time out </strong></br>
+  Amount of seconds that will pass until the heaters are shut off if a filament stop is detected. 
+  <div class="input-append">
+      <input type="number" step="1" class="input-mini text-right" data-bind="value: settings.plugins.actiontrigger.time_out">
+      <span class="add-on">Seconds</span>
+  </div>
 </div>

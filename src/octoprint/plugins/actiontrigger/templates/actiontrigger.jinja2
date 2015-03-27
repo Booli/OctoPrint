@@ -24,7 +24,7 @@
   <div class="modal-body">
     Filament stop has been detected! Check if there is enough filament on the spool and that the Xeed can extrude freely.
     Use the Control tab to load a new roll filament if needed. Resume print through the status panel.</br>
-    Heaters will be shut off in: <span data-bind="text: $root.minutes"></span>:<span data-bind="text: $root.seconds"></span>.
+    Heaters will be shut off in: <span data-bind="text: ($root.heatersOff() ? '' : $root.minutes() + ':')"></span><span data-bind="text: ($root.heatersOff() ? 'Heaters are turned off' : $root.seconds())"></span>
   </div>
   <div class="modal-footer">
     <button class="btn btn-warning action_trigger_dialog_acknowledge" aria-hidden="true" data-bind="click: function (){$root.sendApi('cancel_timer')}">{{ _('Proceed to controls') }}</button>

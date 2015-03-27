@@ -20,7 +20,7 @@ $(function() {
         self.tools = ko.observableArray([]);
         self.hasBed = ko.observable(true);
         self.bedTemp = self._createToolEntry();
-        self.bedTemp["name"](gettext("Chamber"));
+        self.bedTemp["name"](gettext("Bed"));
         self.bedTemp["key"]("bed");
 
         self.isErrorOrClosed = ko.observable(undefined);
@@ -71,7 +71,7 @@ $(function() {
             tools[1]["name"](gettext("Left"))
 
             // print bed
-            heaterOptions["bed"] = {name: gettext("Chamber"), color: "blue"};
+            heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
 
             // write back
             self.heaterOptions(heaterOptions);
