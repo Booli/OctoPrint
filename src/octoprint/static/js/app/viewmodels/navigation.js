@@ -50,6 +50,10 @@ $(function() {
                 callback();
             }
         }
+
+        self.refreshPage = function () {
+            location.reload(true);
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([

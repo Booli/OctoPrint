@@ -65,7 +65,9 @@ $(function() {
                 tools[0]["name"](gettext("Hotend"));
                 tools[0]["key"]("tool0");
             }
-
+            //Xeed hack
+            tools[0]["name"]("Right");
+            tools[1]["name"]("Left");
             self.tools(tools);
         };
 
