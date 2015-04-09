@@ -48,9 +48,9 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 		##~~ SettingsPlugin
 		def get_settings_defaults(self):
 				return dict(
-						action_door = True,
-						action_filament = True,
-						time_out = 90	
+						action_door = False,
+						action_filament = False,
+						time_out = 900	
 				)
 
 		##~~ StartupPlugin
