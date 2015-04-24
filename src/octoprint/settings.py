@@ -73,7 +73,7 @@ default_settings = {
 	"serial": {
 		"port": "/dev/ttyUSB0",
 		"baudrate": 115200,
-		"autoconnect": False,
+		"autoconnect": True,
 		"log": False,
 		"timeout": {
 			"detection": 0.5,
@@ -240,7 +240,7 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"virtualPrinter": {
-			"enabled": True,
+			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
