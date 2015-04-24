@@ -98,6 +98,7 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 						comm.setPause(True)
 						self._printer.home("x")
 						self.filament_action = True
+						self.time_out = self._settings.get_int(["time_out"])
 						self.filament_timer = RepeatedTimer(1.0, self.filamentTimer, run_first=True)
 						self.start_time = time.time()
 						self.filament_timer.start()
@@ -108,8 +109,9 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 
 		# Set flags on event
 		def on_event(self, event, payload):
-			if event == "PrintResumed" or event == "PrintStarted":
+			if event == "PrintResumed" or event == "PrintStarted" or event == "PrintCancelled":
 				self.filament_action = False
+				self.filament_timer.cancel()
 
 		def shutdown_heaters(self):
 			self._send_client_message("shutdown_heaters", dict(time=""))
@@ -119,7 +121,7 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 
 		def filamentTimer(self):
 			if self.time_out is None:
-				self.time_out = s.get_int(["time_out"])
+				self.time_out = self._settings.get_int(["time_out"])
 			if self.start_time is not None:
 				self.now = time.time()
 				if self.now - self.start_time > self.time_out:

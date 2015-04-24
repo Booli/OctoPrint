@@ -131,7 +131,7 @@ default_settings = {
 	"feature": {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False,
+		"alwaysSendChecksum": True,
 		"sdSupport": False,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
@@ -153,7 +153,7 @@ default_settings = {
 	"temperature": {
 		"profiles": [
 			{"name": "ABS", "extruder" : 240, "bed" : 80 },
-			{"name": "PLA", "extruder" : 210, "bed" : 30 }
+			{"name": "PLA", "extruder" : 210, "bed" : 45 }
 		]
 	},
 	"printerProfiles": {
