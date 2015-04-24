@@ -19,8 +19,8 @@ $(function() {
                 { name: "Xeed", type: "section", children: [
                     {name: "Set zOffset", javascript: self.startZOffset },
                     {name: "Level bed", command: "G32", confirm: "Do you want to level the bed?"},
-                    {name: "Quick load", commands: ["G28 X0 Y0", "G1 X270 Y10 F9000", "G91", "G1 E1700 F2000", "G1 E100 F100", "G90"], confirm: "Do you want to load filament to the active nozzle? Make sure the filament is loaded correctly in the bottom drawer and your nozzle is pre-heated. This action will home X and Y, move the head to the load position(right front) and load the filament."},
-                    {name: "Quick unload", commands: ["G91", "G1 E-50 F100", "G1 E-1750 F2000", "G90"], confirm: "Do you want to unload filament? Make sure you are ready to roll up the filament."}
+                    {name: "Quick load", commands: ["G28 X0 Y0", "G1 X270 Y10 F9000", "G91", "G1 E1900 F2000", "G1 E200 F100", "G90"], confirm: "Do you want to load filament to the active nozzle? Make sure the filament is loaded correctly in the bottom drawer and your nozzle is pre-heated. This action will home X and Y, move the head to the load position(right front) and load the filament."},
+                    {name: "Quick unload", commands: ["G91", "G1 E-50 F100", "G1 E-1900 F2000", "G90"], confirm: "Do you want to unload filament? Make sure you are ready to roll up the filament."}
                 ]}
             ];
         };
