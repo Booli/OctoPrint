@@ -1654,6 +1654,7 @@ class MachineCom(object):
 	_gcode_G29 = _gcode_G28
 	_gcode_G30 = _gcode_G28
 	_gcode_G32 = _gcode_G28
+	_gcode_M303 = _gcode_G28
 
 ### MachineCom callback ################################################################################################
 
