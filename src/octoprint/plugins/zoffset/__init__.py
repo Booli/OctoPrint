@@ -38,11 +38,11 @@ class ZOffset(octoprint.plugin.TemplatePlugin,
 			if script_name == "afterPrinterConnected":
 				return ["M206 Z%.2f" % self._settings.get_float(["zOffset"])], None
 
-def __plugin_init__():
-    global __plugin_implementations__
+def __plugin_load__():
+    global __plugin_implementation__
     global __plugin_hooks__
     plugin = ZOffset()
-    __plugin_implementations__ = [plugin]
+    __plugin_implementation__ = plugin
     __plugin_hooks__ = {
         "octoprint.comm.protocol.scripts": plugin.script_hook
     }
