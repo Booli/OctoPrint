@@ -246,7 +246,7 @@ default_settings = {
 			"enabled": True
 		},
 		"virtualPrinter": {
-			"enabled": False,
+			"enabled": True,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
