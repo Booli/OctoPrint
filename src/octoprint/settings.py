@@ -137,7 +137,7 @@ default_settings = {
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
-		"keyboardControl": True
+		"keyboardControl": False
 	},
 	"folder": {
 		"uploads": None,
