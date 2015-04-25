@@ -17,13 +17,13 @@ __plugin_name__ = "Action Trigger"
 __plugin_version__ = "0.1"
 
 
-def __plugin_init__():
-		global _plugin
-		global __plugin_implementations__
+def __plugin_load__():
+		global plugin
+		global __plugin_implementation__
 		global __plugin_hooks__
 
-		_plugin = ActionTriggerPlugin()
-		__plugin_implementations__ = [_plugin]
+		plugin = ActionTriggerPlugin()
+		__plugin_implementation__ = _plugin
 		__plugin_hooks__ = {'octoprint.comm.protocol.action': _plugin.hook_actiontrigger}
 
 class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,

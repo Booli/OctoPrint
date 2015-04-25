@@ -136,7 +136,8 @@ default_settings = {
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
-		"keyboardControl": False
+		"externalHeatupDetection": True,
+		"keyboardControl": True
 	},
 	"folder": {
 		"uploads": None,
@@ -225,10 +226,12 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok T\d*:)" },
+		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok (B|T\d*):)" },
 		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
 	],
-	"plugins": {},
+	"plugins": {
+		"_disabled": []
+	},
 	"scripts": {
 		"gcode": {
 			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\nM140 S0\n\n;disable fan\nM106 S0",
@@ -239,6 +242,9 @@ default_settings = {
 	},
 	"devel": {
 		"stylesheet": "css",
+		"cache": {
+			"enabled": True
+		},
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
@@ -254,6 +260,7 @@ default_settings = {
 			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
@@ -500,7 +507,7 @@ class Settings(object):
 
 			elif "children" in result:
 				# if it has children we need to process them recursively
-				result["children"] = map(process_control, result["children"])
+				result["children"] = map(process_control, [child for child in result["children"] if child is not None])
 
 			return result
 
@@ -761,13 +768,14 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, defaults=None, preprocessors=None, merged=False):
+	def get(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False):
 		import octoprint.util as util
 
 		if len(path) == 0:
 			return None
 
-		config = self._config
+		if config is None:
+			config = self._config
 		if defaults is None:
 			defaults = default_settings
 		if preprocessors is None:
@@ -824,7 +832,7 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path, defaults=None, preprocessors=None):
+	def getInt(self, path, config=None, defaults=None, preprocessors=None):
 		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
@@ -835,8 +843,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path, defaults=None, preprocessors=None):
-		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
+	def getFloat(self, path, config=None, defaults=None, preprocessors=None):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 
@@ -846,8 +854,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path, defaults=None, preprocessors=None):
-		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
+	def getBoolean(self, path, config=None, defaults=None, preprocessors=None):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 		if isinstance(value, bool):
