@@ -1699,7 +1699,7 @@ class MachineCom(object):
 	_gcode_G29_sending = _gcode_G28_sending
 	_gcode_G30_sending = _gcode_G28_sending
 	_gcode_G32_sending = _gcode_G28_sending
-	_gcode_M303_sending = _gcode_M303_sending
+	_gcode_M303_sending = _gcode_G28_sending
 
 ### MachineCom callback ################################################################################################
 
