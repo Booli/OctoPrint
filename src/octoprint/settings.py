@@ -134,7 +134,7 @@ default_settings = {
 		"alwaysSendChecksum": False,
 		"sendChecksumWithUnknownCommands": False,
 		"unknownCommandsNeedAck": False,
-		"sdSupport": True,
+		"sdSupport": False,
 		"sdAlwaysAvailable": False,
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
@@ -248,7 +248,7 @@ default_settings = {
 			"enabled": True
 		},
 		"virtualPrinter": {
-			"enabled": True,
+			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"okWithLinenumber": False,
