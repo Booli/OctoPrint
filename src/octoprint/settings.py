@@ -213,7 +213,7 @@ default_settings = {
 		"autologinAs": None
 	},
 	"slicing": {
-		"enabled": True,
+		"enabled": False,
 		"defaultSlicer": "cura",
 		"defaultProfiles": None
 	},
