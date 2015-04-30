@@ -39,7 +39,7 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 			self.filament_timer = None
 			self.start_time = None
 			self.time_out = None
-			self.door_open = False
+			self.door_open = True
 			self.bed_heating = False
 
 		##~~ TemplatePlugin
@@ -88,13 +88,13 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 				if action_trigger == None:
 					return
 				elif action_trigger == "door_open":
+						self.door_open = True
 						if self._settings.get_boolean(["action_door"]) and comm.isPrinting():
 							self._send_client_message(action_trigger, dict(line=line))
 							comm.setPause(True)
 							self._printer.home("x")
 						if self.bed_heating:
 							self._send_client_message("bed_heating")
-						self.door_open = True
 				elif action_trigger == "door_closed":
 						if self._settings.get_boolean(["action_door"]):
 							comm.setPause(False)
