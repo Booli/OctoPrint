@@ -94,7 +94,7 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 							comm.setPause(True)
 							self._printer.home("x")
 						if self.bed_heating:
-							self._send_client_message("bed_heating")
+							self._send_client_message("bed_heating", dict(cmd=None))
 				elif action_trigger == "door_closed":
 						if self._settings.get_boolean(["action_door"]):
 							comm.setPause(False)
