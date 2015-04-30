@@ -30,3 +30,12 @@
     <button class="btn btn-warning action_trigger_dialog_acknowledge" aria-hidden="true" data-bind="click: function (){$root.sendApi('cancel_timer')}">{{ _('Proceed to controls') }}</button>
   </div>
 </script>
+<!-- Bed Heating -->
+<script type="text/html" id="bed_heating">
+  <div class="modal-body">
+      You have turned on the bed and chamber heating of the Xeed. Make sure the door is closed during heating other wise the heated bed might be <strong>permantly damaged</strong>.
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-warning action_trigger_dialog_acknowledge" aria-hidden="true">{{ _('I understand') }}</button>
+  </div>
+</script>

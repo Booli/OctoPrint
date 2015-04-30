@@ -31,9 +31,12 @@ $(function() {
       actionTriggerDialogAck.bind("click", function (e) {
         e.preventDefault();
         $("#action_trigger_dialog").modal("hide");
-        self.showControls();
-        if (self.actionTriggerTemplate("filament")){
+        if(self.actionTriggerTemplate() == "door_open"){
+          self.showControls();
+        }
+        if (self.actionTriggerTemplate() == "filament"){
           self.sendApi("cancel_timer");
+          self.showControls();
         }
         //prob going to do some stuff here huh.
       });
@@ -82,7 +85,11 @@ $(function() {
         case "close_dialog":
           $("#action_trigger_dialog").modal("hide");
           break;
-
+        case "bed_heating":
+          messageData.title = "Heating bed, please close the door!";
+          self.actionTriggerTemplate(messageType);
+          self.showActionTriggerDialog(messageData);
+          break;
         //Do nothing
       };
     };
