@@ -24,7 +24,8 @@ def __plugin_load__():
 
 		plugin = ActionTriggerPlugin()
 		__plugin_implementation__ = plugin
-		__plugin_hooks__ = {'octoprint.comm.protocol.action': plugin.hook_actiontrigger}
+		__plugin_hooks__ = {'octoprint.comm.protocol.action': plugin.hook_actiontrigger,
+		                    'octoprint.comm.protocol.gcode': plugin.hook_gcode}
 
 class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 						  octoprint.plugin.AssetPlugin,
@@ -38,6 +39,8 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 			self.filament_timer = None
 			self.start_time = None
 			self.time_out = None
+			self.door_open = False
+			self.bed_heating = False
 
 		##~~ TemplatePlugin
 		def get_template_configs(self):
@@ -81,17 +84,22 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 
 
 		##~~ ActionTriggerPlugin
-		def hook_actiontrigger(self, comm, line, action_trigger):
+		def hook_actiontrigger(self, comm, line, action_trigger, *args, **kwargs):
 				if action_trigger == None:
 					return
-				elif action_trigger == "door_open" and self._settings.get_boolean(["action_door"]) and comm.isPrinting():
-						self._send_client_message(action_trigger, dict(line=line))
-						# might want to put this in separate function
-						comm.setPause(True)
-						self._printer.home("x")
-				elif action_trigger == "door_closed" and self._settings.get_boolean(["action_door"]):
+				elif action_trigger == "door_open":
+						if self._settings.get_boolean(["action_door"]) and comm.isPrinting():
+							self._send_client_message(action_trigger, dict(line=line))
+							comm.setPause(True)
+							self._printer.home("x")
+						if self.bed_heating:
+							self._send_client_message("bed_heating")
+						self.door_open = True
+				elif action_trigger == "door_closed":
+						if self._settings.get_boolean(["action_door"]):
+							comm.setPause(False)
 						self._send_client_message("close_dialog", dict(line=line))
-						comm.setPause(False)
+						self.door_open = False
 				elif action_trigger == "filament" and self._settings.get_boolean(["action_filament"]) and \
 					 comm.isPrinting() and self.filament_action == False:
 						self._send_client_message(action_trigger, dict(line=line))
@@ -102,6 +110,24 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 						self.filament_timer = RepeatedTimer(1.0, self.filamentTimer, run_first=True)
 						self.start_time = time.time()
 						self.filament_timer.start()
+
+		def hook_gcode(self, comm, cmd, cmd_type=None, *args, **kwargs):
+			gcode = comm.gcode_command_for_cmd(cmd)
+			if gcode == "M190" or gcode == "M140":
+				match = comm._regex_paramSInt.search(cmd)
+				if match:
+					try:
+						target = float(match.group(1))
+						if target > 0:
+							self.bed_heating = True
+							if self.door_open:
+								self._send_client_message("bed_heating", dict(cmd=cmd))
+							self._logger.debug("Received heating %fC bed" % target)
+						elif target == 0:
+							self.bed_heating = False
+					except ValueError:
+						pass
+			return cmd
 
 		# Send trigger to front end
 		def _send_client_message(self, message_type, data=None):
