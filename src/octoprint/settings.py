@@ -155,7 +155,7 @@ default_settings = {
 	},
 	"temperature": {
 		"profiles": [
-			{"name": "ABS", "extruder" : 240, "bed" : 80 },
+			{"name": "ABS", "extruder" : 240, "bed" : 70 },
 			{"name": "PLA", "extruder" : 210, "bed" : 45 }
 		]
 	},

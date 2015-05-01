@@ -93,7 +93,8 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 							self._send_client_message(action_trigger, dict(line=line))
 							comm.setPause(True)
 							self._printer.home("x")
-						if self.bed_heating:
+							break # I think it needs this but needs tesing TODO
+						elif self.bed_heating:
 							self._send_client_message("bed_heating", dict(cmd=None))
 				elif action_trigger == "door_closed":
 						if self._settings.get_boolean(["action_door"]):
