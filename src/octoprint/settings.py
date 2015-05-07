@@ -157,7 +157,8 @@ default_settings = {
 		"profiles": [
 			{"name": "ABS", "extruder" : 240, "bed" : 80 },
 			{"name": "PLA", "extruder" : 210, "bed" : 45 }
-		]
+		],
+		"cutoff": 30
 	},
 	"printerProfiles": {
 		"default": None,
