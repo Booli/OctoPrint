@@ -1,0 +1,34 @@
+<div class="row">
+	<div class="span4">
+		<div class="control-group">
+		    <label class="control-label">{{ _('Hex file') }}</label>
+		    <div class="input-prepend">
+			    <span class="btn fileinput-button">
+			        <span>{{ _('Browse...') }}</span>
+			        <input id="settings-flash-arduino" type="file" name="file" data-url="{{ url_for("plugin.flasharduino.flash_hex_file") }}">
+			    </span>
+		        <span class="add-on" data-bind="text: hex_path"></span>
+		    </div>
+		</div>
+		<button class="btn btn-primary" id="settings-flash-arduino-start">{{ _('Flash') }}</button>
+	</div>
+	<div class ="span4">
+		<h5>Status</h5>
+		<div id="flash_read_progress" class="progress progress-info" style="width: 100%;">
+		    <div class="bar" style="width: 100%"></div>
+		    <span>Reading Flash</span>
+		</div>
+		<div id="flash_write_progress" class="progress progress-info" style="width: 100%;">
+		    <div class="bar" style="width: 100%"></div>
+		    <span>Writing Flash</span>
+		</div>
+		<div id="flash_verify_progress" class="progress progress-info" style="width: 100%;">
+		    <div class="bar" style="width: 100%"></div>
+		    <span>Verify Flash</span>
+		</div>
+		<div id="flash_done_progress" class="progress progress-info" style="width: 100%;">
+		    <div class="bar" style="width: 100%"></div>
+		    <span>Flashing Done</span>
+		</div>
+	</div>
+</div>
