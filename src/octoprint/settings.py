@@ -139,6 +139,7 @@ default_settings = {
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
+		"supportWait": True,
 		"keyboardControl": False
 	},
 	"folder": {
@@ -157,7 +158,8 @@ default_settings = {
 		"profiles": [
 			{"name": "ABS", "extruder" : 240, "bed" : 70 },
 			{"name": "PLA", "extruder" : 210, "bed" : 45 }
-		]
+		],
+		"cutoff": 30
 	},
 	"printerProfiles": {
 		"default": None,
@@ -269,7 +271,9 @@ default_settings = {
 			"waitOnLongMoves": False,
 			"rxBuffer": 64,
 			"txBuffer": 40,
-			"commandBuffer": 4
+			"commandBuffer": 4,
+			"sendWait": True,
+			"waitInterval": 1.0
 		}
 	}
 }

@@ -23,6 +23,7 @@ from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
+from octoprint.util import InvariantContainer
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -46,7 +47,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._bedTemp = None
 		self._targetTemp = None
 		self._targetBedTemp = None
-		self._temps = deque([], 300)
+		self._temps = TemperatureHistory(cutoff=settings().getInt(["temperature", "cutoff"])*60)
 		self._tempBacklog = []
 
 		self._latestMessage = None
@@ -759,16 +760,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		oldState = self._state
 
 		# forward relevant state changes to gcode manager
-		if self._comm is not None and oldState == self._comm.STATE_PRINTING:
+		if oldState == comm.MachineCom.STATE_PRINTING:
 			if self._selectedFile is not None:
-				if state == self._comm.STATE_OPERATIONAL:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
-				elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_ERROR or state == self._comm.STATE_CLOSED_WITH_ERROR:
+				if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
-		elif self._comm is not None and state == self._comm.STATE_PRINTING:
+		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
-		elif state == self._comm.STATE_CLOSED or state == self._comm.STATE_CLOSED_WITH_ERROR:
+		elif state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:
 				self._comm = None
 
@@ -820,6 +819,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self.start_print()
 
 	def on_comm_print_job_done(self):
+		self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.getPrintTime(), 0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
@@ -937,3 +937,12 @@ class StateMonitor(object):
 		}
 
 
+class TemperatureHistory(InvariantContainer):
+	def __init__(self, cutoff=30 * 60):
+
+		def temperature_invariant(data):
+			data.sort(key=lambda x: x["time"])
+			now = int(time.time())
+			return [item for item in data if item["time"] >= now - cutoff]
+
+		InvariantContainer.__init__(self, guarantee_invariant=temperature_invariant)

@@ -242,6 +242,9 @@ class MachineCom(object):
 				self._sdFiles = []
 				self._callback.on_comm_sd_files([])
 
+			if self._currentFile is not None:
+				self._currentFile.close()
+
 		oldState = self.getStateString()
 		self._state = newState
 		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
@@ -781,8 +784,12 @@ class MachineCom(object):
 		if not self._openSerial():
 			return
 
+		try_hello = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
+			self._serial.timeout = 0.01
+			try_hello = False
 			self._log("Starting baud rate detection")
 			self._changeState(self.STATE_DETECT_BAUDRATE)
 		else:
@@ -793,9 +800,13 @@ class MachineCom(object):
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
+		supportWait = settings().getBoolean(["feature", "supportWait"])
+
+		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
+		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
 
 		# enqueue an M105 first thing
-		if not settings().getBoolean(["feature", "waitForStartOnConnect"]):
+		if try_hello:
 			self._sendCommand("M110")
 			self._clear_to_send.set()
 
@@ -861,7 +872,7 @@ class MachineCom(object):
 						continue
 
 				##~~ process oks
-				if line.strip().startswith("ok"):
+				if line.strip().startswith("ok") or (self.isPrinting() and supportWait and line.strip().startswith("wait")):
 					self._clear_to_send.set()
 					self._blocking_command = False
 
@@ -1009,22 +1020,19 @@ class MachineCom(object):
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
 					if line == '' or time.time() > self._timeout:
-						if len(self._baudrateDetectList) < 1:
-							self.close()
-							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
-							self._changeState(self.STATE_ERROR)
-							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-						elif self._baudrateDetectRetry > 0:
+						if self._baudrateDetectRetry > 0:
+							self._serial.timeout = detection_timeout
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
 							self._sendCommand("M110")
 							self._clear_to_send.set()
-						else:
+						elif len(self._baudrateDetectList) > 0:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
 								self._serial.baudrate = baudrate
-								self._serial.timeout = settings().getFloat(["serial", "timeout", "detection"])
+								if self._serial.timeout != connection_timeout:
+									self._serial.timeout = connection_timeout
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communication")
@@ -1033,6 +1041,11 @@ class MachineCom(object):
 								self._clear_to_send.set()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
+						else:
+							self.close()
+							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
+							self._changeState(self.STATE_ERROR)
+							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						self._clear_to_send.set()
@@ -1068,11 +1081,14 @@ class MachineCom(object):
 					if line == "" and time.time() > self._timeout:
 						if not self._blocking_command:
 							self._log("Communication timeout during printing, forcing a line")
+							self._sendCommand("M105")
 							self._clear_to_send.set()
 						else:
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
 
-					if "ok" in line:
+					if "ok" in line or (supportWait and "wait" in line):
+						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
+						# swallowed, so we treat it the same as an ok here teo take up communication again
 						if self._resendSwallowNextOk:
 							self._resendSwallowNextOk = False
 
@@ -1196,7 +1212,6 @@ class MachineCom(object):
 				self._log("Connecting to: %s" % (p))
 				programmer.connect(p)
 				serial_obj = programmer.leaveISP()
-				break
 			except ispBase.IspError as (e):
 				self._log("Error while connecting to %s: %s" % (p, str(e)))
 			except:
@@ -1227,7 +1242,8 @@ class MachineCom(object):
 				# connect to regular serial port
 				self._log("Connecting to: %s" % port)
 				if baudrate == 0:
-					serial_obj = serial.Serial(str(port), 115200, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+					baudrates = baudrateList()
+					serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				else:
 					serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 				serial_obj.close()
@@ -1267,13 +1283,7 @@ class MachineCom(object):
 				line = line.rstrip() + self._readline()
 
 			#Skip the communication errors, as those get corrected.
-			if 'checksum mismatch' in line \
-					or 'Wrong checksum' in line \
-					or 'Line Number is not Last Line Number' in line \
-					or 'expected line' in line \
-					or 'No Line Number with checksum' in line \
-					or 'No Checksum with line number' in line \
-					or 'Missing checksum' in line:
+			if 'line number' in line.lower() or 'checksum' in line.lower() or 'expected line' in line.lower():
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
 			elif not self.isError():
@@ -1360,7 +1370,7 @@ class MachineCom(object):
 			resendDelta = self._currentLine - lineToResend
 
 			if lastCommError is not None \
-					and ("line number is not last line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
 					and lineToResend == self._lastResendNumber \
 					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
 				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
@@ -1526,7 +1536,7 @@ class MachineCom(object):
 					else:
 						self._doSendWithoutChecksum(command)
 
-				use_up_clear = not self._unknownCommandsNeedAck
+				use_up_clear = self._unknownCommandsNeedAck
 				if is_gcode:
 					# trigger "sent" phase and use up one "ok"
 					self._process_command_phase("sent", command, gcode=gcode_match.group(1))
@@ -1796,6 +1806,12 @@ class PrintingFileInformation(object):
 		"""
 		self._start_time = time.time()
 
+	def close(self):
+		"""
+		Closes the print job.
+		"""
+		pass
+
 class PrintingSdFileInformation(PrintingFileInformation):
 	"""
 	Encapsulates information regarding an ongoing print from SD.
@@ -1837,10 +1853,22 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def start(self):
 		"""
-		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
+		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
 		self._handle = open(self._filename, "r")
+
+	def close(self):
+		"""
+		Closes the file if it's still open.
+		"""
+		PrintingFileInformation.close(self)
+		if self._handle is not None:
+			try:
+				self._handle.close()
+			except:
+				pass
+		self._handle = None
 
 	def getNext(self):
 		"""
@@ -1849,10 +1877,10 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		if self._handle is None:
 			raise ValueError("File %s is not open for reading" % self._filename)
 
-		offsets = self._offsets_callback() if self._offsets_callback is not None else None
-		current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
-
 		try:
+			offsets = self._offsets_callback() if self._offsets_callback is not None else None
+			current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
+
 			processed = None
 			while processed is None:
 				if self._handle is None:
@@ -1860,16 +1888,13 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					return None
 				line = self._handle.readline()
 				if not line:
-					self._handle.close()
-					self._handle = None
+					self.close()
 				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 			self._pos = self._handle.tell()
 
 			return processed
 		except Exception as e:
-			if self._handle is not None:
-				self._handle.close()
-				self._handle = None
+			self.close()
 			self._logger.exception("Exception while processing line")
 			raise e
 
