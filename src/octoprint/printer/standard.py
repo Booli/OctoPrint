@@ -268,7 +268,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if len(axes) != len(validated_axes):
 			raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
 
-		self.commands(["T0", "G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"])
+		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"])
 
 	def extrude(self, amount):
 		if not isinstance(amount, (int, long, float)):
