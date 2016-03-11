@@ -137,7 +137,8 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 		def on_event(self, event, payload):
 			if event == "PrintResumed" or event == "PrintStarted" or event == "PrintCancelled":
 				self.filament_action = False
-				self.filament_timer.cancel()
+				if self.filament_timer is not None:
+					self.filament_timer.cancel()
 
 		def shutdown_heaters(self):
 			self._send_client_message("shutdown_heaters", dict(time=""))
@@ -153,7 +154,8 @@ class ActionTriggerPlugin(octoprint.plugin.TemplatePlugin,
 				if self.now - self.start_time > self.time_out:
 					self.shutdown_heaters()
 					self.start_time = None
-					self.filament_timer.cancel()
+					if self.filament_timer is not None:
+						self.filament_timer.cancel()
 					return
 				self._send_client_message("update_timer", dict(timer=int(self.time_out-(self.now - self.start_time))))
 
